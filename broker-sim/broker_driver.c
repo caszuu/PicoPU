@@ -41,7 +41,7 @@ void save_fb() {
   // save linear image buffers
 
   stbi_write_png_compression_level = 2;
-  stbi_write_png("broker_sim_color0.png", fb_extent[0], fb_extent[1], 4, fb_color_buffer, sizeof(struct rgba_color) * fb_extent[0]);
+  stbi_write_png("broker_sim_color0.png", fb_extent[0], fb_extent[1], 4, color_buf, sizeof(struct rgba_color) * fb_extent[0]);
   stbi_write_png("broker_sim_depth.png", fb_extent[0], fb_extent[1], 1, depth_buf, sizeof(uint8_t) * fb_extent[0]);
 
   free(color_buf);
@@ -116,7 +116,7 @@ void stream_shader(void* data, uint16_t size) {
   *(uint16_t*)tbuf = size;
   memcpy(tbuf + 2, data, size);
 
-  // write(picopu_fd, tbuf, sizeof(uint16_t) + size);
+  write(picopu_fd, tbuf, sizeof(uint16_t) + size);
 
   free(tbuf);
 }
@@ -136,6 +136,13 @@ bool recv_shader(void** res, gcs_type_t expected_type, gcs_type_t secondary_expe
     size_read += n;
   }
 
+  if (*(gcs_type_t*)(buf) == gcs_type_dbg) {
+    struct gcs_dbg* shader_dbg = (struct gcs_dbg*)(buf);
+    printf("dbg: %s\n", shader_dbg->dbg_message);
+
+    return recv_shader(res, expected_type, secondary_expected_type);
+  }
+
   assert(*(gcs_type_t*)(buf) == expected_type || *(gcs_type_t*)(buf) == secondary_expected_type && "unexpected gcs packet");
 
   if (res) {
@@ -148,7 +155,7 @@ bool recv_shader(void** res, gcs_type_t expected_type, gcs_type_t secondary_expe
 /* broker sim */
 
 int main() {
-  float vertex_buffer[3][3][1] = { { 1.f, 1.f, 1.f }, { 1.f, 1.f, 1.f }, { 1.f, 1.f, 1.f }, };
+  float vertex_buffer[3][3][1] = { { 0.f, 0.f, 1.f }, { 0.f, 1.f, 1.f }, { 1.f, 1.f, 1.f }, };
   static const size_t vertex_output_stride = sizeof(float) * 3;
 
   static const screen_axis_t fb_extent[] = { 128, 128 };
@@ -157,7 +164,7 @@ int main() {
   fb_depth_buffer = malloc(sizeof(depth_t) * fb_extent[0] * fb_extent[1]);
 
   setup_serial(B115200, 0);
-  clear_fb((struct rgba_color){ 64, 64, 64, 255 }, UINT32_MAX);
+  clear_fb((struct rgba_color){ 64, 64, 64, 128 }, UINT32_MAX);
 
   // begin
 
@@ -189,14 +196,18 @@ int main() {
   printf("streming vertex commands...\n");
 
   struct gcs_vs_header* v_stream = malloc(sizeof(struct gcs_vs_header) + sizeof(vertex_buffer));
-  *v_stream = (struct gcs_vs_header){
-    gcs_type_vs,
-    1, 0
-  };
+  // *v_stream = (struct gcs_vs_header){
+  //   gcs_type_vs,
+  //   1, 0
+  // };
+
+  v_stream->type = gcs_type_vs;
+  memcpy(v_stream->vertex_counts, (uint8_t[4]){ 3, 0, 0, 0 }, sizeof(v_stream->vertex_counts));
+  v_stream->base_vertex = 0;
 
   memcpy((void*)v_stream + sizeof(struct gcs_vs_header), vertex_buffer, sizeof(vertex_buffer));
 
-  stream_shader(&v_stream, sizeof(struct gcs_vs_header) + sizeof(vertex_buffer));
+  stream_shader(v_stream, sizeof(struct gcs_vs_header) + sizeof(vertex_buffer));
   free(v_stream);
   
   struct gcs_po_header* prim_output;
@@ -223,8 +234,8 @@ int main() {
     struct gcs_fs_header* f_stream = malloc(sizeof(struct gcs_fs_header) + sizeof(struct clip_point) * 3 + vertex_output_stride * 3);
     f_stream->type = gcs_type_fs;
 
-    memcpy(&f_stream->line_offsets, (screen_axis_t[]) {0, 0, 0, 0}, sizeof(f_stream->line_offsets));
-    memcpy(&f_stream->line_counts, (uint8_t[]) {size_buf[i], 0, 0, 0}, sizeof(f_stream->line_counts));
+    memcpy(f_stream->line_offsets, (screen_axis_t[]) {0, 0, 0, 0}, sizeof(f_stream->line_offsets));
+    memcpy(f_stream->line_counts, (uint8_t[]) {size_buf[i], 0, 0, 0}, sizeof(f_stream->line_counts));
 
     uint8_t* fs_seek = (uint8_t*)(f_stream) + sizeof(struct gcs_fs_header);
 
@@ -234,7 +245,9 @@ int main() {
     memcpy(fs_seek, &vertex_output_buf[i * vertex_output_stride * 3], vertex_output_stride * 3);
     fs_seek += vertex_output_stride * 3 * CHIPS_PER_CLUSTER;
 
-    stream_shader(&f_stream, sizeof(struct gcs_fs_header) + sizeof(struct clip_point) * 3 + vertex_output_stride * 3);
+    printf("%d\n", f_stream->line_counts[0]);
+
+    stream_shader(f_stream, sizeof(struct gcs_fs_header) + sizeof(struct clip_point) * 3 + vertex_output_stride * 3);
     free(f_stream);
 
     // fragment output

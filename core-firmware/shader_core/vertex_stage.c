@@ -2,9 +2,8 @@
 #include "../common/cluster_bus.h"
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <stdbool.h>
-
-#define SHOULD_VERTEX_ALIAS vertex_stride >= output_vertex_stride
 
 /* vertex pipeline stages */
 
@@ -12,17 +11,32 @@
 // the memory range is gonna be reused of the
 uint8_t* vertex_in_pbuf;
 
-// points to the start of the output vertex assemblies buffer, this might
-// point to the same range as [vertex_in_pbuf] if buffers can be aliased safely
-uint8_t* vertex_out_pbuf;
+// gcs_po buffers
+#define po_buf_size(vert_count) sizeof(struct gcs_po_header) + sizeof(screen_axis_t) * (vert_count / 3) + sizeof(struct clip_point) * vert_count + output_vertex_stride * vert_count
+
+screen_axis_t frag_size_buf[sizeof(screen_axis_t) * (MAX_VERTICES_PER_STREAM / 3)];
+struct clip_point clip_buf[sizeof(struct clip_point) * MAX_VERTICES_PER_STREAM];
+uint8_t vertex_out_buf[MAX_VERTEX_OUTPUT_STRIDE * MAX_VERTICES_PER_STREAM];
+
+bool exec_vertex_stage(uint32_t vertex_index, void* in_buf, struct clip_point* clip_buf, void* out_buf);
 
 void assign_vertex_stream(struct gcs_vs_header* stream) {
-    if (!stream->vertex_counts[SHADER_CHIP_ID]) goto finish; // no verticies for this chip
+    if (!stream->vertex_counts[SHADER_CHIP_ID]) { // no verticies for this chip
+        struct gcs_po_header p = { gcs_type_po, 0 };
+        uint16_t p_size = sizeof(p);
 
-    vertex_in_pbuf = (uint8_t*)(stream + 1);
-    vertex_out_pbuf = SHOULD_VERTEX_ALIAS ? vertex_in_pbuf : malloc((uint16_t)(stream->vertex_counts[SHADER_CHIP_ID]) * (uint16_t)(output_vertex_stride));
-    
-    uint8_t* vertex_clip_buf;
+        format_dbg("empty vertex stream");
+
+        fwrite(&p_size, sizeof(uint16_t), 1, stdout);
+        fwrite(&p, sizeof(p), 1, stdout);
+        fflush(stdout);
+
+        return;
+    }
+
+    uint8_t vertex_count = stream->vertex_counts[SHADER_CHIP_ID];
+
+    vertex_in_pbuf = (uint8_t*)(stream) + sizeof(struct gcs_vs_header);
 
     // assign core1 vertices
     
@@ -34,15 +48,18 @@ void assign_vertex_stream(struct gcs_vs_header* stream) {
 
     bool is_visible = false;
     uint8_t prim_vertex_index = 0;
+    uint8_t prim_index = 0;
 
     uint16_t output_vertex_index = 0;
 
-    for (uint32_t vertex_index = 0; vertex_index < stream->vertex_counts[SHADER_CHIP_ID]; vertex_index++) {
-        is_visible |= exec_vertex_shader(
+    format_dbg("starting vertex stream");
+
+    for (uint32_t vertex_index = 0; vertex_index < vertex_count; vertex_index++) {
+        is_visible |= exec_vertex_stage(
             vertex_index, 
             vertex_in_pbuf + vertex_index * vertex_stride,
-            vertex_clip_buf + output_vertex_index * sizeof(screen_axis_t) * 2, 
-            vertex_out_pbuf + output_vertex_index * output_vertex_stride
+            clip_buf + output_vertex_index, 
+            vertex_out_buf + output_vertex_index * output_vertex_stride
         );
 
         output_vertex_index++;
@@ -50,23 +67,33 @@ void assign_vertex_stream(struct gcs_vs_header* stream) {
         if (++prim_vertex_index == per_prim_vertex_count) {
             // primitive finish - cull or store
 
-            if (cull) {
+            // FIXME: ccw/cw backface/frontface culling
+            if (is_visible) {
                 output_vertex_index -= per_prim_vertex_count;
             }
+            frag_size_buf[prim_index] = fb_extent[0]; // FIXME: temp.
 
             // reset primitive state
 
             is_visible = false;
             prim_vertex_index = 0;
 
+            prim_index++;
             continue;
         }
     }
     
-finish:
-    uint16_t prim_count = output_vertex_index / per_prim_vertex_count;
+    format_dbg("finished vertex stream");
 
-    transmit_primitive_outputs();
+    struct gcs_po_header p = { gcs_type_po, vertex_count / 3 };
+    uint16_t p_size = po_buf_size(vertex_count);
 
-    if (!(SHOULD_VERTEX_ALIAS)) free(vertex_out_pbuf);
+    fwrite(&p_size, sizeof(uint16_t), 1, stdout);
+    fwrite(&p, sizeof(p), 1, stdout);
+
+    fwrite(frag_size_buf, sizeof(screen_axis_t) * p.primitive_count, 1, stdout);
+    fwrite(clip_buf, sizeof(struct clip_point) * vertex_count, 1, stdout);
+    fwrite(vertex_out_buf, output_vertex_stride * vertex_count, 1, stdout);
+
+    fflush(stdout);
 }

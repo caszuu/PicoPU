@@ -6,6 +6,8 @@ add_executable(shader_firmware
     graphics_state.c
     raster_stage.c
     vertex_stage.c
+
+    test_def.c
 )
 
 pico_set_program_name(shader_firmware "shader_firmware")

@@ -6,8 +6,10 @@
 #include <common/cluster_bus.h>
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
+#include <stdarg.h>
 
 /* gcs state buffer */
 
@@ -34,14 +36,27 @@ volatile bool exit_graphics_state;
 
 /* graphics commands */
 
-void signal_ready() {
+void send_ready() {
+    struct gcs_ready p = { gcs_type_ready };
+    uint16_t p_size = sizeof(p);
 
+    fwrite(&p_size, sizeof(uint16_t), 1, stdout);
+    fwrite(&p, sizeof(p), 1, stdout);
+    fflush(stdout);
 }
 
-void enter_graphics_state(struct gcs_begin* info) {
+void send_dbg(struct gcs_dbg* p) {
+    uint16_t p_size = sizeof(*p);
+    
+    fwrite(&p_size, sizeof(uint16_t), 1, stdout);
+    fwrite(p, sizeof(*p), 1, stdout);
+    fflush(stdout);
+}
+
+void enter_graphics_state() {
     // setup the gcs pio block and iqrs
 
-    memcpy(fb_extent, info->fb_extent, sizeof(fb_extent));
+    // memcpy(fb_extent, info->fb_extent, sizeof(fb_extent));
 
     vertex_mcode = 0;
     fragment_mcode = 0;
@@ -59,9 +74,48 @@ void enter_graphics_state(struct gcs_begin* info) {
 
     // FIXME: bootup gcs pio
 
-    signal_ready();
+    send_ready();
 
     while (!exit_graphics_state) {
+        uint16_t p_size;
+        fread(&p_size, sizeof(uint16_t), 1, stdin);
+
+        uint16_t size_read = 0;
+        while (p_size > size_read) {
+            uint16_t n = fread(packet_buffer + size_read, 1, p_size - size_read, stdin);
+
+            // if (!n) watchdog_reboot(0, 0, 0);
+            size_read += n;
+        }
+
+        uint8_t type = packet_buffer[0];
+
+        format_dbg("Packet received; s: %hu t: %hhx", p_size, type);
+
+        switch (type) {
+        case gcs_type_begin:
+            struct gcs_begin* h = (struct gcs_begin*)packet_buffer;
+            memcpy(fb_extent, h->fb_extent, sizeof(fb_extent));
+
+            send_ready();
+            break;
+        
+        case gcs_type_gp_conf:
+            configure_pipeline((struct gcs_gp_conf_header*)packet_buffer);
+            break;
+
+        case gcs_type_vs:
+            assign_vertex_stream((struct gcs_vs_header*)packet_buffer);
+            break;
+
+        case gcs_type_fs:
+            assign_fragment_stream((struct gcs_fs_header*)packet_buffer);
+            break;
+        
+        default:
+            watchdog_reboot(0, 0, 0);
+        }
+
         // wait for gcs command interupts, if an interupt takes
         // abnormaly long, the watchdog will trigger a shader_stall
         watchdog_update();
@@ -78,7 +132,7 @@ void cleanup_graphics_state() {
         free(const_buffer);
     }
 
-    signal_ready();
+    send_ready();
 }
 
 void configure_pipeline(struct gcs_gp_conf_header* conf) {
@@ -128,7 +182,7 @@ void configure_pipeline(struct gcs_gp_conf_header* conf) {
     dma_channel_wait_for_finish_blocking(vert_chan);
     dma_channel_wait_for_finish_blocking(frag_chan);
 
-    signal_ready();
+    send_ready();
 }
 
 void update_c_buffer(struct gcs_cb_header* info) {
@@ -140,17 +194,13 @@ void update_c_buffer(struct gcs_cb_header* info) {
     const_buffer = malloc(info->buffer_size);
     memcpy(const_buffer, seek, info->buffer_size);
 
-    signal_ready();
+    send_ready();
 }
 
 /* vertex pipeline stages */
 
-void assign_vertex_stream(struct gcs_vs_header* stream) {
-
-}
+void assign_vertex_stream(struct gcs_vs_header* stream);
 
 /* fragment pipeline stages */
 
-void assign_fragment_stream() {
-
-}
+void assign_fragment_stream(struct gcs_fs_header* stream);

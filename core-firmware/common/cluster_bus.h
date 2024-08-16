@@ -7,6 +7,7 @@
 
 #define CHIPS_PER_CLUSTER 4
 #define MAX_GCS_PACKET_SIZE 131072
+#define MAX_SHADER_DBG_SIZE 512
 
 #define SHADER_CHIP_ID 0 // TODO: generate by cmake
 
@@ -41,6 +42,7 @@ enum gcs_types {
     gcs_type_fo,
 
     gcs_type_fault = 32,
+    gcs_type_dbg,
 }; typedef uint8_t gcs_type_t;
 
 // begin graphics command stream, resets all shader chips
@@ -151,6 +153,11 @@ struct gcs_fo_header {
     /* [tile_count] / 2 + ([tile_count] % 2) (4 bits per tile) of uint8_t coverage masks */
     /* [tile_count] of [color_tile]s follow */
     /* [tile_count] of [depth_tile]s follow (for late depth tests) */
+};
+
+struct gcs_dbg {
+    gcs_type_t type;
+    char dbg_message[MAX_SHADER_DBG_SIZE];
 };
 
 /* transfer shader command packets */
