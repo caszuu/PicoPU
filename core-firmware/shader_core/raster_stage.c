@@ -136,6 +136,9 @@ void render_frag_quad(u16_x2_simd p, iu16_x4_simd* ws, uint8_t cv_mask /*note: t
 // there might be better way to rasterize along edges based on
 // interp hw to skip most outside pixels but this will do for now
 
+// rasterizer and fragment stage implementation originaly from the amazing Optimizing Software Occlusion Culling series
+// https://fgiesen.wordpress.com/2013/02/17/optimizing-sw-occlusion-culling-index/
+
 // TODO: subpixel_precision, perf_counters
 // currently implements: non-corrected top-left fill rule, 2x2 tile steps, hardcoded ccw trigs
 
