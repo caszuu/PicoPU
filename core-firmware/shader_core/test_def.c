@@ -6,21 +6,43 @@
 #include <string.h>
 #include <stdbool.h>
 
+// note: this file contains test definitions which would not be included with the firmware outside of debugging
+
 #define MAX_INLINE_TILES 32
 #define fo_buf_size(tile_count) sizeof(struct gcs_fo_header) + sizeof(uint8_t) * ((tile_count / 2) + (tile_count % 2)) + sizeof(struct color_tile) * tile_count + sizeof(struct depth_tile) * tile_count
 
-// uint8_t fo_buf[sizeof(uint16_t) + fo_buf_size(MAX_INLINE_TILES)] = { 0, 0, gcs_type_fo };
+struct gcs_fo_header fo_header = { gcs_type_fo, 0, 0 };
+uint8_t mask_buf[((MAX_INLINE_TILES / 2) + (MAX_INLINE_TILES % 2))];
+struct color_tile ct_buf[MAX_INLINE_TILES];
+struct depth_tile dt_buf[MAX_INLINE_TILES];
 
-// uint8_t* mask_buf = (uint8_t*)(fo_buf + sizeof(uint16_t) + sizeof(struct gcs_fo_header));
-// struct color_tile* ct_buf = (struct color_tile*)(fo_buf + sizeof(uint16_t) + sizeof(struct gcs_fo_header) + sizeof(uint8_t) * ((MAX_INLINE_TILES / 2) + (MAX_INLINE_TILES % 2)));
-// struct depth_tile* dt_buf = (struct depth_tile*)(fo_buf + sizeof(uint16_t) + sizeof(struct gcs_fo_header) + sizeof(uint8_t) * ((MAX_INLINE_TILES / 2) + (MAX_INLINE_TILES % 2)) + sizeof(struct color_tile) * MAX_INLINE_TILES);
+void reset_fragment_output() {
+    fo_header = (struct gcs_fo_header){ gcs_type_fo, 0, 0 };
 
-struct gcs_fo_header fo_header = { gcs_type_fo };
-uint8_t mask_buf[sizeof(uint8_t) * ((MAX_INLINE_TILES / 2) + (MAX_INLINE_TILES % 2))];
-struct color_tile ct_buf[sizeof(struct color_tile) * MAX_INLINE_TILES];
-struct depth_tile dt_buf[sizeof(struct depth_tile) * MAX_INLINE_TILES];
+    // reset masks which are ORed into the buffer
+    memset(mask_buf, 0, ((MAX_INLINE_TILES / 2) + (MAX_INLINE_TILES % 2)));
+}
 
-void exec_fragment_stage(i16_x2_simd p, i16_x4_simd* ws, uint8_t cv_mask) {
+void stream_fragment_output() {
+    if (fo_header.tile_count != 0) {
+        uint16_t p_size = fo_buf_size(fo_header.tile_count); 
+
+        sleep_ms(100); // FIXME: temp.
+
+        put_buffer(&p_size, sizeof(uint16_t));
+        put_buffer(&fo_header, sizeof(struct gcs_fo_header));
+
+        put_buffer(mask_buf, sizeof(uint8_t) * ((fo_header.tile_count / 2) + (fo_header.tile_count % 2)));
+        put_buffer(ct_buf, sizeof(struct color_tile) * fo_header.tile_count);
+        put_buffer(dt_buf, sizeof(struct depth_tile) * fo_header.tile_count); 
+        
+        stdio_flush();
+
+        reset_fragment_output();
+    }
+}
+
+void exec_fragment_stage(u16_x2_simd p, iu16_x4_simd* ws, uint8_t cv_mask) {
     // select depth
 
     // patch_ds_tile(&dt); // only if no gl_FragDepth writes
@@ -34,60 +56,30 @@ void exec_fragment_stage(i16_x2_simd p, i16_x4_simd* ws, uint8_t cv_mask) {
         // jit c shader main
     }
 
-    struct color_tile ct = { p.v[0], p.v[1], 0, 255 }; // pull_col_tile();
-    struct depth_tile dt = { INT32_MAX, INT32_MAX, INT32_MAX, INT32_MAX };
+    struct color_tile ct = { (struct rgba_color){ p.v[0], p.v[1], 0, 255}, (struct rgba_color){ p.v[0] + 1, p.v[1], 0, 255}, (struct rgba_color){ p.v[0], p.v[1] + 1, 0, 255}, (struct rgba_color){ p.v[0] + 1, p.v[1] + 1, 0, 255} }; // pull_col_tile();
+    // struct color_tile ct = { (struct rgba_color){ 255, 0, 255, 255 }, (struct rgba_color){ 255, 0, 255, 255 }, (struct rgba_color){ 255, 0, 255, 255 }, (struct rgba_color){ 255, 0, 255, 255 } };
+    struct depth_tile dt = { 100, 100, 100, 100 };
     // hw interp blend and format conv
 
     if (fo_header.tile_count == 0) {
         // calc the pixel index of the first tile
 
-        fo_header.fb_index_base =  (p.v[0] / 2) * 4 + (p.v[1] & (~1) /* / 2 * 2 */) * fb_extent[0] /* tile index */ + 
-                            (p.v[0] % 2) + (p.v[1] % 2) * 2 /* tile offset */;
+        format_dbg("x: %d %d y: %d %d  %d", p.v[0], p.v[1], (p.v[0] / 2) * 4, (p.v[1] / 2 * 2) * fb_extent[0], fb_extent[0]);
+
+        fo_header.fb_index_base = (p.v[0] / 2) * 4 + (p.v[1] / 2 * 2) * fb_extent[0] /* tile index */;
+                                  // (p.v[0] % 2) + (p.v[1] % 2) * 2 /* tile offset */;
     }
 
-    mask_buf[fo_header.tile_count] |= cv_mask << (4 * (fo_header.tile_count % 2));
+    mask_buf[fo_header.tile_count / 2] |= cv_mask << (4 * (fo_header.tile_count % 2));
     ct_buf[fo_header.tile_count] = ct;
     dt_buf[fo_header.tile_count] = dt;
+    
+    // format_dbg("fp: %hhx %hhx %hhx %hhx", ct.c[0].r, ct.c[0].g, ct.c[0].b, ct.c[0].a);
+    
     fo_header.tile_count++;
 
     if (fo_header.tile_count == MAX_INLINE_TILES) {
-        uint16_t p_size = fo_buf_size(MAX_INLINE_TILES);
-        fo_header.tile_count = MAX_INLINE_TILES;
-
-        fwrite(&p_size, sizeof(uint16_t), 1, stdout);
-        fwrite(&fo_header, sizeof(fo_header), 1, stdout);
-
-        fwrite(&mask_buf, sizeof(uint8_t) * ((MAX_INLINE_TILES / 2) + (MAX_INLINE_TILES % 2)), 1, stdout);
-        fwrite(&ct_buf, sizeof(struct color_tile) * MAX_INLINE_TILES, 1, stdout);
-        fwrite(&dt_buf, sizeof(struct depth_tile) * MAX_INLINE_TILES, 1, stdout);
-        
-        fflush(stdout);
-
-        // reset masks which are ORed into the buffer
-        memset(mask_buf, 0, ((MAX_INLINE_TILES / 2) + (MAX_INLINE_TILES % 2)));
-        
-        fo_header.tile_count = 0;
-    }
-}
-
-void early_fragment_output() {
-    if (fo_header.tile_count != 0) {
-        uint16_t p_size = fo_buf_size(fo_header.tile_count);
-        fo_header.tile_count = fo_header.tile_count;
-
-        fwrite(&p_size, sizeof(uint16_t), 1, stdout);
-        fwrite(&fo_header, sizeof(fo_header), 1, stdout);
-
-        fwrite(mask_buf, sizeof(uint8_t) * ((MAX_INLINE_TILES / 2) + (MAX_INLINE_TILES % 2)), 1, stdout);
-        fwrite(ct_buf, sizeof(struct color_tile) * MAX_INLINE_TILES, 1, stdout);
-        fwrite(dt_buf, sizeof(struct depth_tile) * MAX_INLINE_TILES, 1, stdout);
-        
-        fflush(stdout);
-
-        // reset masks which are ORed into the buffer
-        memset(mask_buf, 0, ((MAX_INLINE_TILES / 2) + (MAX_INLINE_TILES % 2)));
-
-        fo_header.tile_count = 0;
+        stream_fragment_output();
     }
 }
 

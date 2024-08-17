@@ -40,17 +40,17 @@ void send_ready() {
     struct gcs_ready p = { gcs_type_ready };
     uint16_t p_size = sizeof(p);
 
-    fwrite(&p_size, sizeof(uint16_t), 1, stdout);
-    fwrite(&p, sizeof(p), 1, stdout);
-    fflush(stdout);
+    put_buffer(&p_size, sizeof(uint16_t));
+    put_buffer(&p, sizeof(p));
+    stdio_flush();
 }
 
 void send_dbg(struct gcs_dbg* p) {
     uint16_t p_size = sizeof(*p);
     
-    fwrite(&p_size, sizeof(uint16_t), 1, stdout);
-    fwrite(p, sizeof(*p), 1, stdout);
-    fflush(stdout);
+    put_buffer(&p_size, sizeof(uint16_t));
+    put_buffer(p, sizeof(*p));
+    stdio_flush();
 }
 
 void enter_graphics_state() {
@@ -105,11 +105,11 @@ void enter_graphics_state() {
             break;
 
         case gcs_type_vs:
-            assign_vertex_stream((struct gcs_vs_header*)packet_buffer);
+            process_vertex_stream((struct gcs_vs_header*)packet_buffer);
             break;
 
         case gcs_type_fs:
-            assign_fragment_stream((struct gcs_fs_header*)packet_buffer);
+            process_fragment_stream((struct gcs_fs_header*)packet_buffer);
             break;
         
         default:
@@ -196,11 +196,3 @@ void update_c_buffer(struct gcs_cb_header* info) {
 
     send_ready();
 }
-
-/* vertex pipeline stages */
-
-void assign_vertex_stream(struct gcs_vs_header* stream);
-
-/* fragment pipeline stages */
-
-void assign_fragment_stream(struct gcs_fs_header* stream);

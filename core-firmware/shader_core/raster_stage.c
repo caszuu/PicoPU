@@ -1,6 +1,12 @@
+#include "graphics_state.h"
+
 #include "../common/cluster_bus.h"
 #include "../common/ex_simd.h"
 
+#include <hardware/interp.h>
+
+#include "pico/stdlib.h"
+#include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -11,43 +17,79 @@ bool is_top_left(const struct clip_point* p0, const struct clip_point* p1, bool 
            (p0->y > p1->y != is_cw);                       // is_left - again, also not correct for is_cw trigs
 }
 
-struct trig_edge {
-    i16_x4_simd x_step_offset;
-    i16_x4_simd y_step_offset;  
+// "inverse" two's-compliment: due to bit-packed ex_simd types not being well defined when crossing the signed 0 <-> -1 barrier (causing an overflow),
+//                             we invert the sign bit turning INT32_MIN into 0x0000, INT32_MAX into 0xFFFF and most notably 0 into 0x8000 and -1 into 0x7FFF
+//                             closing the overflow gap between the positive and negative halfs and allowing us to do unsigned arithmetic with signed values
+//                             note: this only porperly works for addition and subtraction, multiplies and divides will *not* be correct in this form
 
-    i16_x4_simd w;
+struct trig_edge {
+    iu16_x4_simd x_step_offset;
+    iu16_x4_simd y_step_offset;  
+
+    iu16_x4_simd w;
 };
 
 // filters all two's-compliment sign bits in a [i16_x4_simd]
 #define SIGN_MASK (0x8000) | (0x8000 << 16) | (0x8000ULL << 32) | (0x8000ULL << 48)
 
-struct trig_edge init_trig_edge(const struct clip_point* p0, const struct clip_point* p1, const i16_x2_simd orig) {
+#define inv_tc(signed_val) (signed_val ^ 0x8000) /*only flip sign bit*/
+#define inv_tc_i16_x4_simd(...) (__VA_ARGS__.o ^ SIGN_MASK)
+#define inv_tc_i16_x2_simd(...) (__VA_ARGS__.o ^ (SIGN_MASK & UINT32_MAX))
+
+struct trig_edge init_trig_edge(const struct clip_point* p0, const struct clip_point* p1, const u16_x2_simd orig) {
     struct trig_edge e;
     
     // edge setup
+
+    /*
+    int16_t a = inv_tc(p0->y - p1->y);
+    int16_t b = inv_tc(p1->x - p0->x);
+
+    uint16_t c = inv_tc(p0->x * p1->y - p0->y * p1->x + (is_top_left(p0, p1, false) * -1));
+
+    // step deltas
+    uint16_t t = inv_tc(a * RENDER_QUAD_SIZE);
+    e.x_step_offset.o = (iu16_x4_simd){ t, t, t, t }.o;
+
+    t = inv_tc(b * RENDER_QUAD_SIZE);
+    e.y_step_offset.o = (iu16_x4_simd){ t, t, t, t }.o;
+
+    // initial pixel block
+
+    iu16_x4_simd x = { inv_tc_i16_x4_simd((u16_x4_simd){ orig.o + (u16_x4_simd){ 0, 1, 0, 1 }.o }) };
+    iu16_x4_simd y = { inv_tc_i16_x4_simd((u16_x4_simd){ orig.o + (u16_x4_simd){ 0, 0, 1, 1 }.o }) };
+
+    // edge function values at origin
+
+    e.w.o = (iu16_x4_simd){ a, a, a, a }.o * x.o + (iu16_x4_simd){ b, b, b, b }.o * y.o + (iu16_x4_simd){ c, c, c, c }.o;
+    */
+
+    /* this is the quivalent of the above (bacause we can't multiply with _simd) */
 
     // FIXME: check for possible overflows in barycentric calcs.
 
     int16_t a = p0->y - p1->y;
     int16_t b = p1->x - p0->x;
 
-    int16_t c = p0->x * p1->y - p0->y * p1->x + (is_top_left(p0, p1, false) * -1) /* fill rule bias */;
+    uint16_t c = inv_tc(p0->x * p1->y - p0->y * p1->x + (is_top_left(p0, p1, false) * -1) /* fill rule bias */);
 
     // step deltas
-    int16_t t = a * RENDER_QUAD_SIZE;
-    e.x_step_offset.o = (i16_x4_simd){ t, t, t, t }.o;
+    uint16_t t = inv_tc(a * RENDER_QUAD_SIZE);
+    e.x_step_offset.o = (iu16_x4_simd){ t, t, t, t }.o;
 
-    t = b * RENDER_QUAD_SIZE;
-    e.y_step_offset.o = (i16_x4_simd){ t, t, t, t }.o;
+    t = inv_tc(b * RENDER_QUAD_SIZE);
+    e.y_step_offset.o = (iu16_x4_simd){ t, t, t, t }.o;
 
     // initial pixel block
 
-    i16_x4_simd x = { orig.o + (i16_x4_simd){ 0, 1, 0, 1 }.o };
-    i16_x4_simd y = { orig.o + (i16_x4_simd){ 0, 0, 1, 1 }.o };
+    uint16_t o_x1 = orig.v[0] + 1;
+    uint16_t o_y1 = orig.v[1] + 1;
 
     // edge function values at origin
 
-    e.w.o = (i16_x4_simd){ a, a, a, a }.o * x.o + (i16_x4_simd){ b, b, b, b }.o * y.o + (i16_x4_simd){ c, c, c, c }.o;
+    e.w.o = inv_tc_i16_x4_simd((u16_x4_simd){ a * orig.v[0], a * o_x1, a * orig.v[0], a * o_x1 }) + 
+            inv_tc_i16_x4_simd((u16_x4_simd){ b * orig.v[1], b * orig.v[1], b * o_y1, b * o_y1 }) + 
+            (iu16_x4_simd){ c, c, c, c }.o;
 
     return e;
 }
@@ -55,8 +97,12 @@ struct trig_edge init_trig_edge(const struct clip_point* p0, const struct clip_p
 // perform early depth test and execute fragment shaders
 // an aligned 2x2 quad of pixels
 
-void render_frag_quad(i16_x2_simd p, i16_x4_simd* ws, uint8_t cv_mask /*note: top 4-bit will be 1*/) {
-    request_ds_tile(p); // PERF TODO: request p+1 tile for parallel wait
+void exec_fragment_stage(u16_x2_simd p, iu16_x4_simd* ws, uint8_t cv_mask);
+void stream_fragment_output();
+void reset_fragment_output();
+
+void render_frag_quad(u16_x2_simd p, iu16_x4_simd* ws, uint8_t cv_mask /*note: top 4-bit will be 1*/) {
+    /* request_ds_tile(p); // PERF TODO: request p+1 tile for parallel wait
 
     // eraly depth-test
 
@@ -80,34 +126,11 @@ void render_frag_quad(i16_x2_simd p, i16_x4_simd* ws, uint8_t cv_mask /*note: to
     // hw interp select on coverage
 
     request_col_tile(p);
-    patch_ds_tile(&dt);
+    patch_ds_tile(&dt); */
 
     // execute fragment
 
     exec_fragment_stage(p, ws, cv_mask);
-
-    {
-        // select depth
-
-        patch_ds_tile(&dt); // only if no gl_FragDepth writes
-
-        // interp vertex attributes
-
-        for (uint8_t i = 0; i < RENDER_QUAD_SIZE * 2; i++) {
-            if (!(cv_mask & (1 << i))) continue;
-            
-            // jit c shader main
-        }
-
-        // late depth test: if gl_FragDepth writes
-        // patch_ds_tile(&dt);
-
-        struct color_tile ct = pull_col_tile();
-
-        // hw interp blend and format conv
-
-        fragment_output(&ct, &dt);
-    }
 }
 
 // there might be better way to rasterize along edges based on
@@ -116,37 +139,111 @@ void render_frag_quad(i16_x2_simd p, i16_x4_simd* ws, uint8_t cv_mask /*note: to
 // TODO: subpixel_precision, perf_counters
 // currently implements: non-corrected top-left fill rule, 2x2 tile steps, hardcoded ccw trigs
 
-void raster_trig(struct clip_point clip_points[3], const struct gcs_fs_header* stream) {
-    // interp. min/max (trig bound box, screen box, scissors and frag_stream box)
+extern uint8_t packet_buffer[MAX_GCS_PACKET_SIZE];
+
+void raster_trig(const struct gcs_fs_header* stream) {
+    // confusing note: due to an unknown cause, when [stream] is used in this ptr lookup instead of the direct [packet_buffer] (which should be the same ptr)
+    //                 the pico for some reason crashes on reads of [clip_points], maybe a miscompile or some other obscure reason, but i sure didn't find it
+
+    struct clip_point clip_points[3] = { { 0, 0, UINT32_MAX }, { 0, 100, UINT32_MAX }, { 100, 100, UINT32_MAX } };// (struct clip_point*)(packet_buffer + sizeof(struct gcs_fs_header) + sizeof(struct clip_point) * 3 * SHADER_CHIP_ID);
+    format_dbg("p: %u", clip_points[1].y);
     
-    uint16_t min_x = ;
-    uint16_t min_y = stream->min_y;
-    uint16_t max_x = ;
-    uint16_t max_y = stream->max_y;
+    // interp. clip bounding box (trig bound box, screen box, scissors and frag_stream box)
+
+    // min/max bounds by "inverse" clamping all different bboxes
+    interp_config cfg = interp_default_config();
+    interp_config_set_clamp(&cfg, true);
+    interp_config_set_signed(&cfg, true);
+    interp_set_config(interp1, 0, &cfg);
+
+    interp1->base[0] = (int32_t)0; // initial max value (screen clipping)
+    interp1->base[1] = clip_points[0].x; // initial min value
+
+    interp1->accum[0] = clip_points[1].x;
+    interp1->base[1] = interp1->peek[0];
+
+    interp1->accum[0] = clip_points[2].x;
+
+    // interp1->accum[0] = scissors_state;
+    // interp1->base[0] = interp1->peek[0];
+
+    screen_axis_t min_x = interp1->peek[0];
+
+    interp1->base[0] = (int32_t)stream->line_offsets[SHADER_CHIP_ID]; // initial max value (screen clipping)
+    interp1->base[1] = clip_points[0].y; // initial min value
+
+    interp1->accum[0] = clip_points[1].y;
+    interp1->base[1] = interp1->peek[0];
+
+    interp1->accum[0] = clip_points[2].y;
+
+    // interp1->accum[0] = scissors_state;
+    // interp1->base[1] = interp1->peek[0];
+
+    screen_axis_t min_y = interp1->peek[0];
+
+    interp1->base[1] = (int32_t)fb_extent[0]; // initial min value (screen clipping)
+    interp1->base[0] = clip_points[0].x; // initial max value
+
+    interp1->accum[0] = clip_points[1].x;
+    interp1->base[0] = interp1->peek[0];
+
+    interp1->accum[0] = clip_points[2].x;
+
+    // interp1->accum[0] = scissors_state;
+    // interp1->base[1] = interp1->peek[0];
+
+    screen_axis_t max_x = interp1->peek[0];
+
+    interp1->base[1] = (int32_t)stream->line_offsets[SHADER_CHIP_ID] + (int32_t)stream->line_counts[SHADER_CHIP_ID]; // initial min value (screen clipping)
+    interp1->base[0] = clip_points[0].x; // initial max value
+
+    interp1->accum[0] = clip_points[1].x;
+    interp1->base[0] = interp1->peek[0];
+
+    interp1->accum[0] = clip_points[2].x;
+
+    // interp1->accum[0] = scissors_state;
+    // interp1->base[1] = interp1->peek[0];
+
+    screen_axis_t max_y = interp1->peek[0];
 
     // TODO: split core work on x axis
 
-    // rasterize
-    
-    i16_x2_simd p = { min_y, min_x };
+    /* rasterize */
+
+    u16_x2_simd p = { min_y, min_x };
+
+    format_dbg("raster prepared: %d %d %d %d", min_x, min_y, max_x, max_y);
+    sleep_ms(100);
 
     // precalc. Barycentric coordicates and offset them on every step
     struct trig_edge e0 = init_trig_edge(&clip_points[1], &clip_points[2], p);
     struct trig_edge e1 = init_trig_edge(&clip_points[2], &clip_points[0], p);
     struct trig_edge e2 = init_trig_edge(&clip_points[0], &clip_points[1], p);
 
-    for (; p.v[0] <= max_y; p.v[0] += RENDER_QUAD_SIZE) {
-        i16_x4_simd ws[] = { e0.w, e1.w, e2.w };
-        
-        for (; p.v[1] <= max_x; p.v[1] += RENDER_QUAD_SIZE) {
-            i16_x4_simd mask = { (ws[0].o | ws[1].o | ws[2].o) & SIGN_MASK };
+    format_dbg("starting raster");
+    sleep_ms(1000);
 
-            // condition equivalent to: any(mask.v >= 0)
-            if (!(~mask.o)) {
-                uint8_t pack_mask = ~((mask.o & 1) | ((mask.o >> 16) & 1) | ((mask.o >> 32) & 1) | ((mask.o >> 48) & 1));
-                
+    reset_fragment_output();
+
+    for (; p.v[1] <= max_y; p.v[1] += RENDER_QUAD_SIZE) {
+        iu16_x4_simd ws[] = { e0.w, e1.w, e2.w };
+        
+        for (p.v[0] = min_x; p.v[0] <= max_x; p.v[0] += RENDER_QUAD_SIZE) {
+            iu16_x4_simd mask = { (ws[0].o | ws[1].o | ws[2].o) & SIGN_MASK };
+
+            // condition equivalent to: any(mask.v >= 0) note: remember, we're in inverse two's-compliment mode here, therefore checking if any sign bits are 1
+            if (mask.o) {
+                uint8_t pack_mask = ((mask.o >> 15) & 1) | ((mask.o >> 16 + 14) & 1) | ((mask.o >> 32 + 13) & 1) | ((mask.o >> 48 + 12) & 1);
+
                 render_frag_quad(p, ws, pack_mask);
+            } else {
+                // tile gap, stream buffered tiles
+                stream_fragment_output();
             }
+
+            sleep_us(500);
 
             // offset step
             ws[0].o += e0.x_step_offset.o;
@@ -154,9 +251,26 @@ void raster_trig(struct clip_point clip_points[3], const struct gcs_fs_header* s
             ws[2].o += e2.x_step_offset.o;
         }
 
+        // row step, stream buffered tiles
+        stream_fragment_output();
+
+        format_dbg("row: %u", p.v[0]);
+        // sleep_ms(1000);
+
         // offset row
         e0.w.o += e0.y_step_offset.o;
         e1.w.o += e1.y_step_offset.o;
         e2.w.o += e2.y_step_offset.o;
     }
+}
+
+void process_fragment_stream(struct gcs_fs_header* stream) {
+    raster_trig(stream);
+
+    struct gcs_ready p = { gcs_type_ready };
+    uint16_t p_size = sizeof(p);
+
+    put_buffer(&p_size, sizeof(uint16_t));
+    put_buffer(&p, sizeof(p));
+    stdio_flush();
 }

@@ -1,12 +1,12 @@
-#include <stdio.h>
-#include "pico/stdlib.h"
-
-#include "hardware/watchdog.h"
+#include "graphics_state.h"
+#include "../common/cluster_bus.h"
 
 #include "chip_state.h"
-#include "../common/cluster_bus.h"
-#include "graphics_state.h"
 
+#include "pico/stdlib.h"
+#include "hardware/watchdog.h"
+
+#include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
 
@@ -34,13 +34,15 @@ int main() {
 
     // watchdog_enable(2000, 1);
 
-    if (watchdog_caused_reboot()) {
-        shader_stall();
-    }
+    // if (watchdog_caused_reboot()) {
+    //     shader_stall();
+    // }
 
     // enable serial device on host by sending traffic
     printf("Hello, world!\n");
     sleep_ms(100);
+
+    stdio_set_translate_crlf(&stdio_usb, false);
 
     enter_graphics_state();
     return 0;

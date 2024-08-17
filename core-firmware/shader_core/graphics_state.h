@@ -3,11 +3,12 @@
 #include "../common/picopu_types.h"
 #include "../common/cluster_bus.h"
 
+#include <stdio.h>
+
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
 
-// #define MAX_CONSTANT_BUFFERS 4
 #define MAX_VERTEX_OUTPUT_STRIDE 24
 #define MAX_VERTICES_PER_STREAM 32
 
@@ -25,10 +26,11 @@ extern primitive_mode_t prim_mode;
 void send_ready();
 void send_dbg(struct gcs_dbg* p);
 
-#define format_dbg(...) do { struct gcs_dbg p = { gcs_type_dbg }; snprintf(p.dbg_message, sizeof(p.dbg_message), __VA_ARGS__); send_dbg(&p); } while(false)
+#define put_buffer(buf, size) stdio_put_string((const char*)buf, size, false, false);
+#define format_dbg(...) do { struct gcs_dbg __p = { gcs_type_dbg }; snprintf(__p.dbg_message, sizeof(__p.dbg_message), __VA_ARGS__); send_dbg(&__p); } while(false)
 
 void configure_pipeline(struct gcs_gp_conf_header* conf);
-void assign_vertex_stream(struct gcs_vs_header* stream);
-void assign_fragment_stream(struct gcs_fs_header* stream);
+void process_vertex_stream(struct gcs_vs_header* stream);
+void process_fragment_stream(struct gcs_fs_header* stream);
 
 void enter_graphics_state();

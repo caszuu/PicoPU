@@ -2,7 +2,6 @@
 
 // the following types are shared between all picopu chips and *always* much match
 
-// #include "pico/stdlib.h"
 #include <stdint.h>
 
 typedef uint32_t res_addr_t;

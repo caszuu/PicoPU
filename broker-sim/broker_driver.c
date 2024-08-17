@@ -10,7 +10,7 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
-static const screen_axis_t fb_extent[] = { 100, 100 };
+static const screen_axis_t fb_extent[] = { 128, 128 };
 
 struct rgba_color* fb_color_buffer;
 depth_t* fb_depth_buffer;
@@ -143,7 +143,18 @@ bool recv_shader(void** res, gcs_type_t expected_type, gcs_type_t secondary_expe
     return recv_shader(res, expected_type, secondary_expected_type);
   }
 
-  assert(*(gcs_type_t*)(buf) == expected_type || *(gcs_type_t*)(buf) == secondary_expected_type && "unexpected gcs packet");
+  assert(size < 2200); // serial corrupt protect
+
+  // debug hex printer
+  /* for (int i = 0; i < size; i++) {
+    printf("0x%hhx ", buf[i]);
+    if (i % 16 == 15) printf("\n");
+  } */
+
+  if (*(gcs_type_t*)(buf) != expected_type && *(gcs_type_t*)(buf) != secondary_expected_type) {
+    printf("received unexpected packet type: 0x%x\n", *(gcs_type_t*)(buf));
+    abort();
+  }
 
   if (res) {
     *res = buf;
@@ -157,8 +168,6 @@ bool recv_shader(void** res, gcs_type_t expected_type, gcs_type_t secondary_expe
 int main() {
   float vertex_buffer[3][3][1] = { { 0.f, 0.f, 1.f }, { 0.f, 1.f, 1.f }, { 1.f, 1.f, 1.f }, };
   static const size_t vertex_output_stride = sizeof(float) * 3;
-
-  static const screen_axis_t fb_extent[] = { 128, 128 };
 
   fb_color_buffer = malloc(sizeof(struct rgba_color) * fb_extent[0] * fb_extent[1]);
   fb_depth_buffer = malloc(sizeof(depth_t) * fb_extent[0] * fb_extent[1]);
@@ -196,10 +205,6 @@ int main() {
   printf("streming vertex commands...\n");
 
   struct gcs_vs_header* v_stream = malloc(sizeof(struct gcs_vs_header) + sizeof(vertex_buffer));
-  // *v_stream = (struct gcs_vs_header){
-  //   gcs_type_vs,
-  //   1, 0
-  // };
 
   v_stream->type = gcs_type_vs;
   memcpy(v_stream->vertex_counts, (uint8_t[4]){ 3, 0, 0, 0 }, sizeof(v_stream->vertex_counts));
@@ -209,6 +214,8 @@ int main() {
 
   stream_shader(v_stream, sizeof(struct gcs_vs_header) + sizeof(vertex_buffer));
   free(v_stream);
+
+  // primitive output
   
   struct gcs_po_header* prim_output;
   recv_shader((void**)&prim_output, gcs_type_po, gcs_type_po);
@@ -235,7 +242,7 @@ int main() {
     f_stream->type = gcs_type_fs;
 
     memcpy(f_stream->line_offsets, (screen_axis_t[]) {0, 0, 0, 0}, sizeof(f_stream->line_offsets));
-    memcpy(f_stream->line_counts, (uint8_t[]) {size_buf[i], 0, 0, 0}, sizeof(f_stream->line_counts));
+    memcpy(f_stream->line_counts, (uint8_t[]) {size_buf[i] /*make sure fb_extent fits into uint8_t*/, 0, 0, 0}, sizeof(f_stream->line_counts));
 
     uint8_t* fs_seek = (uint8_t*)(f_stream) + sizeof(struct gcs_fs_header);
 
@@ -244,8 +251,6 @@ int main() {
 
     memcpy(fs_seek, &vertex_output_buf[i * vertex_output_stride * 3], vertex_output_stride * 3);
     fs_seek += vertex_output_stride * 3 * CHIPS_PER_CLUSTER;
-
-    printf("%d\n", f_stream->line_counts[0]);
 
     stream_shader(f_stream, sizeof(struct gcs_fs_header) + sizeof(struct clip_point) * 3 + vertex_output_stride * 3);
     free(f_stream);
@@ -273,6 +278,8 @@ int main() {
       fo_seek += f_output->tile_count * sizeof(struct depth_tile);
 
       // PERF TODO: dma request color tile range before depth-test
+
+      assert(f_output->fb_index_base < fb_extent[0] * fb_extent[1]); // protect against writting outside fb by a faulty index_base
 
       depth_t* fb_dt = &fb_depth_buffer[f_output->fb_index_base];
       for (uint8_t i = 0; i < f_output->tile_count; i++) {

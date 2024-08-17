@@ -147,8 +147,8 @@ struct gcs_po_header {
 struct gcs_fo_header {
     gcs_type_t type;
     
-    uint32_t fb_index_base; // start index of the first tile in fb
     uint8_t tile_count;
+    uint32_t fb_index_base; // start index of the first tile in fb
 
     /* [tile_count] / 2 + ([tile_count] % 2) (4 bits per tile) of uint8_t coverage masks */
     /* [tile_count] of [color_tile]s follow */
