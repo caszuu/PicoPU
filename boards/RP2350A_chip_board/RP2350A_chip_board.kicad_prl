@@ -1,6 +1,6 @@
 {
   "board": {
-    "active_layer": 37,
+    "active_layer": 0,
     "active_layer_preset": "All Layers",
     "auto_track_width": true,
     "hidden_netclasses": [],
@@ -68,7 +68,7 @@
     "zone_display_mode": 0
   },
   "meta": {
-    "filename": "RP2350_60QFN_minimal.kicad_prl",
+    "filename": "RP2350A_chip_board.kicad_prl",
     "version": 3
   },
   "project": {

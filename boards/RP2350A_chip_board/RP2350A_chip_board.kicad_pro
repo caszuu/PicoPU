@@ -414,7 +414,7 @@
     "pinned_symbol_libs": []
   },
   "meta": {
-    "filename": "RP2350_60QFN_minimal.kicad_pro",
+    "filename": "RP2350A_chip_board.kicad_pro",
     "version": 1
   },
   "net_settings": {

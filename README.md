@@ -12,4 +12,4 @@ Monorepo subprojects:
 - `broker-sim/` - software broker chip emulator
 - `boards/` - hardware board design
 	- `RP2350A_chip_board/` - board files for the shader chip
-	- `RP2350B_chip_board/` - board files for the broker chip (WIP)
+	- `RP2350B_chip_board/` - board files for the broker chip

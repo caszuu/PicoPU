@@ -680,7 +680,7 @@
       (property "Value" "RP2350_60QFN" (at 24.13 -49.53 0)
         (effects (font (size 1.27 1.27)))
       )
-      (property "Footprint" "RP2350_60QFN_minimal:RP2350-QFN-60-1EP_7x7_P0.4mm_EP3.4x3.4mm_ThermalVias" (at -19.05 0 0)
+      (property "Footprint" "RP2350A_chip_board:RP2350-QFN-60-1EP_7x7_P0.4mm_EP3.4x3.4mm_ThermalVias" (at -19.05 0 0)
         (effects (font (size 1.27 1.27)) hide)
       )
       (property "Datasheet" "" (at -19.05 0 0)
@@ -949,7 +949,7 @@
         )
       )
     )
-    (symbol "RP2350_60QFN_minimal-rescue:W25Q128JVS-Memory_Flash" (in_bom yes) (on_board yes)
+    (symbol "RP2350A_chip_board-rescue:W25Q128JVS-Memory_Flash" (in_bom yes) (on_board yes)
       (property "Reference" "U" (at -8.89 8.89 0)
         (effects (font (size 1.27 1.27)))
       )
@@ -2426,7 +2426,7 @@
     (uuid fa3d150b-985e-4750-9d15-0f4d34ec9da9)
   )
 
-  (symbol (lib_id "RP2350_60QFN_minimal-rescue:W25Q128JVS-Memory_Flash") (at 68.58 167.64 0) (unit 1)
+  (symbol (lib_id "RP2350A_chip_board-rescue:W25Q128JVS-Memory_Flash") (at 68.58 167.64 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 00000000-0000-0000-0000-00005eda5f2c)
     (property "Reference" "U1" (at 59.69 157.48 0)
@@ -2450,7 +2450,7 @@
     (pin "7" (uuid edc7bf7f-fab7-4501-b774-f3ed57322e9d))
     (pin "8" (uuid 96e93a31-5856-42b8-91cb-18d75281c26a))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "U1") (unit 1)
         )
@@ -2475,7 +2475,7 @@
     )
     (pin "1" (uuid efac26cc-f400-4ca5-918f-6a44d9842317))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "#PWR011") (unit 1)
         )
@@ -2500,7 +2500,7 @@
     )
     (pin "1" (uuid 70054458-0614-4795-a0ec-2f9f94be49b4))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "#PWR017") (unit 1)
         )
@@ -2526,7 +2526,7 @@
     (pin "1" (uuid 559d3bcb-fc7f-4e3b-a4a2-2bdd38350b3a))
     (pin "2" (uuid e7c151a5-4e04-4bca-8d52-d299920ef8ce))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "R4") (unit 1)
         )
@@ -2552,7 +2552,7 @@
     (pin "1" (uuid eae2fe26-a498-4e2f-b52a-d09079a49836))
     (pin "2" (uuid 7e36285b-50cc-45aa-8aba-46fdf3f63cdd))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "C14") (unit 1)
         )
@@ -2577,7 +2577,7 @@
     )
     (pin "1" (uuid de7dcf95-5cb0-4c1e-b602-88d5d0990b81))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "#PWR012") (unit 1)
         )
@@ -2602,7 +2602,7 @@
     )
     (pin "1" (uuid 4889d590-9ad0-40bb-8671-276bceacd83f))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "#PWR021") (unit 1)
         )
@@ -2628,7 +2628,7 @@
     (pin "1" (uuid ec184c23-fa03-4e24-a026-f741cd14e9f0))
     (pin "2" (uuid 0a928a63-0657-4304-a0ed-0a0b5e75e824))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "R2") (unit 1)
         )
@@ -2654,7 +2654,7 @@
     (pin "1" (uuid 1dc7fa57-d713-4058-a762-7c59640a8b01))
     (pin "2" (uuid 21c2be70-a512-422d-a001-04317940ab8c))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "R3") (unit 1)
         )
@@ -2679,7 +2679,7 @@
     )
     (pin "1" (uuid b0473b8a-0611-4e83-9cf8-34d53dc70c79))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "#PWR02") (unit 1)
         )
@@ -2705,7 +2705,7 @@
     (pin "1" (uuid 10504978-2ae4-4b75-b20f-30dc13378930))
     (pin "2" (uuid fbb2b209-244e-4fd6-bcc5-f48165af7074))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "C4") (unit 1)
         )
@@ -2731,7 +2731,7 @@
     (pin "1" (uuid 520133e6-28ba-49c4-8e94-dea017e76fad))
     (pin "2" (uuid 1422bb26-e47f-411a-9417-5681ef83568b))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "C5") (unit 1)
         )
@@ -2757,7 +2757,7 @@
     (pin "1" (uuid c8f3bad6-8352-4653-9de3-4c2be02cc87b))
     (pin "2" (uuid 4b750ad4-5120-4da6-abfd-5395f59a7ac3))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "C6") (unit 1)
         )
@@ -2783,7 +2783,7 @@
     (pin "1" (uuid e69e6aae-8fbe-4f81-a203-e74715535b3a))
     (pin "2" (uuid 23e66139-6e83-4fe7-af70-e508407fc7a6))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "C7") (unit 1)
         )
@@ -2809,7 +2809,7 @@
     (pin "1" (uuid 6195ca3c-f306-438a-bc57-aa1092e3e238))
     (pin "2" (uuid 3199c324-97d1-4f23-a2a1-2337b656facb))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "C8") (unit 1)
         )
@@ -2835,7 +2835,7 @@
     (pin "1" (uuid b3e30991-80ca-479c-8684-01facc98930a))
     (pin "2" (uuid 41e2a77e-3de6-4e33-9b42-dd667e5209d6))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "C9") (unit 1)
         )
@@ -2860,7 +2860,7 @@
     )
     (pin "1" (uuid 45e3ff68-d0fc-4dde-b1bf-d01520b6ff5d))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "#PWR014") (unit 1)
         )
@@ -2886,7 +2886,7 @@
     (pin "1" (uuid ffe0971f-113f-4544-8901-263fe84029f7))
     (pin "2" (uuid 5bc4a8bd-c4b0-4bcb-947e-a0c24476288a))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "C15") (unit 1)
         )
@@ -2911,7 +2911,7 @@
     )
     (pin "1" (uuid e6848218-3972-4909-948d-3dfa5138e1bb))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "#PWR016") (unit 1)
         )
@@ -2936,7 +2936,7 @@
     )
     (pin "1" (uuid 5c83dbbe-219d-4e23-9b90-1c29d0913e86))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "#PWR07") (unit 1)
         )
@@ -2961,7 +2961,7 @@
     )
     (pin "1" (uuid edfb6ddc-39b9-40c5-9985-1a87c9f0d5da))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "#PWR022") (unit 1)
         )
@@ -2987,7 +2987,7 @@
     (pin "1" (uuid b78ca939-293b-4904-bc91-c0f37b04d3a5))
     (pin "2" (uuid 60e1e838-a1d3-41ee-8df0-335858e9f957))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "C3") (unit 1)
         )
@@ -3013,7 +3013,7 @@
     (pin "1" (uuid 5584006f-2336-4170-865b-a8205b3c7084))
     (pin "2" (uuid e4c912ab-207f-49be-97fa-c6889a608880))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "R7") (unit 1)
         )
@@ -3040,7 +3040,7 @@
     (pin "1" (uuid e4b4fe3d-cf35-4370-ab36-a2b39eb6fcf0))
     (pin "2" (uuid 8e574cf0-c5b0-4035-b0bb-fd394a20cd50))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "J2") (unit 1)
         )
@@ -3066,7 +3066,7 @@
     (pin "1" (uuid 899514e0-3dcd-4381-aee4-fa128b9d6bcd))
     (pin "2" (uuid ff917224-2833-4234-816b-6128440709d4))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "R8") (unit 1)
         )
@@ -3092,7 +3092,7 @@
     (pin "2" (uuid 1a3024c2-b488-4477-9991-45c0798be5c3))
     (pin "1" (uuid f807e08e-7d60-4070-9383-9da087ec3aee))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "J1") (unit 1)
         )
@@ -3117,7 +3117,7 @@
     )
     (pin "1" (uuid 3a0cf405-9dee-4b15-af22-36fc7204d5f6))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "#PWR09") (unit 1)
         )
@@ -3134,7 +3134,7 @@
     (property "Value" "RP2350_60QFN" (at 200.3141 198.12 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Footprint" "RP2350_60QFN_minimal:RP2350-QFN-60-1EP_7x7_P0.4mm_EP3.4x3.4mm_ThermalVias" (at 179.07 144.78 0)
+    (property "Footprint" "RP2350A_chip_board:RP2350-QFN-60-1EP_7x7_P0.4mm_EP3.4x3.4mm_ThermalVias" (at 179.07 144.78 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Datasheet" "" (at 179.07 144.78 0)
@@ -3202,7 +3202,7 @@
     (pin "8" (uuid ef0a610a-55a7-464f-b1de-8947209b3ebc))
     (pin "9" (uuid cb951b05-fed8-4003-a4bc-3fd483ee024c))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "U2") (unit 1)
         )
@@ -3228,7 +3228,7 @@
     (pin "1" (uuid 411351bd-05ee-4588-9d4a-a804cd70e4d3))
     (pin "2" (uuid 8d1e4034-b7cb-47bc-8e52-d54bd1fd4754))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "C10") (unit 1)
         )
@@ -3256,7 +3256,7 @@
     (pin "3" (uuid 9f551142-fce6-4bd9-a9a1-c425f5cfaf10))
     (pin "2" (uuid 6a8b6935-730f-486e-ba99-474c3014fdd9))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "D2") (unit 1)
         )
@@ -3281,7 +3281,7 @@
     )
     (pin "1" (uuid e6575a1a-0f7e-4e73-a29c-277bbf1b31ab))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "#PWR026") (unit 1)
         )
@@ -3307,7 +3307,7 @@
     (pin "1" (uuid 216c6136-904f-4748-a3f4-6809d03b2997))
     (pin "2" (uuid 1382f040-8f42-468b-844d-b49ad74d69bf))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "R5") (unit 1)
         )
@@ -3347,7 +3347,7 @@
     (pin "4" (uuid a869940a-24f6-4bb0-b5e7-f41c7d9fb0d9))
     (pin "8" (uuid 13681f71-209a-49eb-90e2-dcb5a832c92e))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "J3") (unit 1)
         )
@@ -3373,7 +3373,7 @@
     (pin "1" (uuid a7ba0437-9c80-484f-9552-1284230006ee))
     (pin "2" (uuid a7321500-9d6f-45bb-81d9-c8ac4a9923cb))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "R1") (unit 1)
         )
@@ -3399,7 +3399,7 @@
     (pin "1" (uuid 053901d8-ed64-444c-96d6-09deb8b3952a))
     (pin "2" (uuid 8a29d203-6542-4644-98c2-13d6d5f181f6))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "C16") (unit 1)
         )
@@ -3416,7 +3416,7 @@
     (property "Value" "4.7u" (at 110.871 109.6522 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Footprint" "RP2350_60QFN_minimal:C_0402_1005Metric_small_pads" (at 108.9152 111.76 0)
+    (property "Footprint" "RP2350A_chip_board:C_0402_1005Metric_small_pads" (at 108.9152 111.76 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Datasheet" "~" (at 107.95 107.95 0)
@@ -3425,7 +3425,7 @@
     (pin "1" (uuid bb2b3b8b-2571-4ad9-8ff1-ef7cb5ae601a))
     (pin "2" (uuid 43fefce5-5994-4a8f-9220-7997f4c5847e))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "C12") (unit 1)
         )
@@ -3450,7 +3450,7 @@
     )
     (pin "1" (uuid 6b1f58ca-7161-4ea7-affc-8603b82ba4ab))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "#PWR020") (unit 1)
         )
@@ -3475,7 +3475,7 @@
     )
     (pin "1" (uuid 3e0e91ea-36f6-40c1-8f44-6d91b99edeb6))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "#PWR025") (unit 1)
         )
@@ -3500,7 +3500,7 @@
     )
     (pin "1" (uuid 6bb9438d-d795-460c-8c78-b38d1373c535))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "#PWR015") (unit 1)
         )
@@ -3525,7 +3525,7 @@
     )
     (pin "1" (uuid f0f6cda2-bb63-4c37-8a82-2ba5b413f672))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "#PWR023") (unit 1)
         )
@@ -3550,7 +3550,7 @@
     )
     (pin "1" (uuid df79bf78-12cf-4081-aba1-2cd9ca8f079e))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "J6") (unit 1)
         )
@@ -3575,7 +3575,7 @@
     )
     (pin "1" (uuid 3dcdcedd-8377-49ab-9b1e-89125c282331))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "#PWR05") (unit 1)
         )
@@ -3601,7 +3601,7 @@
     (pin "1" (uuid a439b685-086e-40b0-ba50-e067bfacc7a9))
     (pin "2" (uuid 46f0b978-a48b-4ea6-abfe-355a104bccca))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "C19") (unit 1)
         )
@@ -3618,7 +3618,7 @@
     (property "Value" "4.7u" (at 123.19 109.22 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Footprint" "RP2350_60QFN_minimal:C_0402_1005Metric_small_pads" (at 120.3452 111.76 0)
+    (property "Footprint" "RP2350A_chip_board:C_0402_1005Metric_small_pads" (at 120.3452 111.76 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Datasheet" "~" (at 119.38 107.95 0)
@@ -3627,7 +3627,7 @@
     (pin "1" (uuid 7c92b7ce-0038-4e2b-bcde-67fb16ce106f))
     (pin "2" (uuid e5755079-589d-4625-82cd-942c22b1305c))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "C13") (unit 1)
         )
@@ -3653,7 +3653,7 @@
     (pin "1" (uuid 873c0c87-f126-458d-9e51-9475f15f7a9c))
     (pin "2" (uuid 1f1cb52c-8c20-449f-9897-96689c47410f))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "C11") (unit 1)
         )
@@ -3678,7 +3678,7 @@
     )
     (pin "1" (uuid 7c50c729-2f03-41d3-a188-84844def9f8d))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "#PWR018") (unit 1)
         )
@@ -3703,7 +3703,7 @@
     )
     (pin "1" (uuid 1aa2f6f1-0862-4cf6-b990-fe98e7f5c019))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "#PWR01") (unit 1)
         )
@@ -3729,7 +3729,7 @@
     (pin "1" (uuid 010a173d-90f1-406a-b06a-7a6c409276d2))
     (pin "2" (uuid 689d9140-5ac3-4052-9a0a-33dffc5bac75))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "R9") (unit 1)
         )
@@ -3757,7 +3757,7 @@
     (pin "3" (uuid 408e2652-703f-4e6e-ad47-a2d9fccc7d37))
     (pin "2" (uuid 78347582-a7ca-4825-be35-27e3db9f91da))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "D1") (unit 1)
         )
@@ -3784,7 +3784,7 @@
     (pin "1" (uuid dc9afedb-4185-4450-9a51-7c318441604a))
     (pin "2" (uuid 4ffbb1f8-ef79-44f9-bd46-1219a40672ea))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "J4") (unit 1)
         )
@@ -3809,7 +3809,7 @@
     )
     (pin "1" (uuid 6aaa3ea8-9b9e-48cf-ae6e-5dde8938416a))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "#PWR019") (unit 1)
         )
@@ -3835,7 +3835,7 @@
     (pin "1" (uuid 764f9665-9e39-4812-863e-2ea17f6c8f2d))
     (pin "2" (uuid 4f53e1dd-4b97-4b5e-92b2-366c76ba42ad))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "C1") (unit 1)
         )
@@ -3860,7 +3860,7 @@
     )
     (pin "1" (uuid 4f47d246-315c-4940-81b2-9ea922ebe327))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "#PWR03") (unit 1)
         )
@@ -3885,7 +3885,7 @@
     )
     (pin "1" (uuid 15554df4-6b37-4e9b-a339-7ed43b1eff4a))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "#PWR027") (unit 1)
         )
@@ -3911,7 +3911,7 @@
     (pin "1" (uuid 36ee9a73-693e-4964-a393-de9bdb0dd3b5))
     (pin "2" (uuid faed632b-8075-4695-a6de-c19611a252be))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "C2") (unit 1)
         )
@@ -3937,7 +3937,7 @@
     (pin "1" (uuid 44e47322-1df5-4ea6-86c8-78f27cc27029))
     (pin "2" (uuid 2f0a4446-cd57-421a-afe9-d9356b7c8bb5))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "R6") (unit 1)
         )
@@ -3962,7 +3962,7 @@
     )
     (pin "1" (uuid 4d45b41d-6b3a-42d9-b933-82014fc98395))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "#PWR024") (unit 1)
         )
@@ -3987,7 +3987,7 @@
     )
     (pin "1" (uuid abc3978f-cd78-4bce-964b-8ffdcac457ce))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "#PWR06") (unit 1)
         )
@@ -4004,7 +4004,7 @@
     (property "Value" "3.3u" (at 135.89 109.22 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Footprint" "RP2350_60QFN_minimal:L_pol_2016" (at 134.62 107.95 0)
+    (property "Footprint" "RP2350A_chip_board:L_pol_2016" (at 134.62 107.95 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Datasheet" "~" (at 134.62 107.95 0)
@@ -4013,7 +4013,7 @@
     (pin "1" (uuid 55140628-8470-4196-be71-839e6ee97452))
     (pin "2" (uuid 300f922a-c2ce-4ea8-b6db-d66185bd0374))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "L1") (unit 1)
         )
@@ -4038,7 +4038,7 @@
     )
     (pin "1" (uuid 6331359a-26e4-46cb-93c9-e25e48dd31d4))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "#PWR028") (unit 1)
         )
@@ -4066,7 +4066,7 @@
     (pin "3" (uuid 2f1c9049-92b6-45d3-af7b-5128c4066b36))
     (pin "4" (uuid 679a7751-79f4-4b8c-aaf7-10d5354ffe88))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "Y1") (unit 1)
         )
@@ -4091,7 +4091,7 @@
     )
     (pin "1" (uuid 5e801a75-c249-4f8e-a773-8a349a03aa80))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "J5") (unit 1)
         )
@@ -4116,7 +4116,7 @@
     )
     (pin "1" (uuid 1082f3d1-6ae4-454d-bf88-7a8a915d0480))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "#PWR08") (unit 1)
         )
@@ -4141,7 +4141,7 @@
     )
     (pin "1" (uuid 96624111-9675-4140-9667-1fe7b3db6936))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "#PWR013") (unit 1)
         )
@@ -4167,7 +4167,7 @@
     (pin "1" (uuid 84111573-e434-4260-a2fb-e81c63018a6d))
     (pin "2" (uuid 558f5a0a-35eb-42fa-ba24-6f3038deff6e))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "C18") (unit 1)
         )
@@ -4192,7 +4192,7 @@
     )
     (pin "1" (uuid fec4adaf-9659-4fd9-913f-d08d9b24a1d3))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "#PWR010") (unit 1)
         )
@@ -4217,7 +4217,7 @@
     )
     (pin "1" (uuid 28b75bac-c7ff-45d3-9c1a-84d43949bea4))
     (instances
-      (project "RP2350_60QFN_minimal"
+      (project "RP2350A_chip_board"
         (path "/94683f5c-9cd9-448e-be96-9792537b5cb8"
           (reference "#PWR04") (unit 1)
         )

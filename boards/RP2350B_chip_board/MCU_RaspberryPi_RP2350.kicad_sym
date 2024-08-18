@@ -6,7 +6,7 @@
     (property "Value" "RP2350_80QFN" (at 25.4 -96.52 0)
       (effects (font (size 1.27 1.27)))
     )
-    (property "Footprint" "RP2350_80QFN_minimal:RP2350-QFN-80-1EP_10x10_P0.4mm_EP3.4x3.4mm_ThermalVias" (at -19.05 0 0)
+    (property "Footprint" "RP2350B_chip_board:RP2350-QFN-80-1EP_10x10_P0.4mm_EP3.4x3.4mm_ThermalVias" (at -19.05 0 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Datasheet" "" (at -19.05 0 0)

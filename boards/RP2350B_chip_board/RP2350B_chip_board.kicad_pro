@@ -35,8 +35,8 @@
         "other_text_upright": false,
         "pads": {
           "drill": 0.0,
-          "height": 0.62,
-          "width": 0.56
+          "height": 0.64,
+          "width": 0.54
         },
         "silk_line_width": 0.12,
         "silk_text_italic": false,
@@ -416,7 +416,7 @@
     "pinned_symbol_libs": []
   },
   "meta": {
-    "filename": "RP2350_80QFN_minimal.kicad_pro",
+    "filename": "RP2350B_chip_board.kicad_pro",
     "version": 1
   },
   "net_settings": {
