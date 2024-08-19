@@ -23,10 +23,11 @@ bool is_top_left(const struct clip_point* p0, const struct clip_point* p1, bool 
 //                             note: this only porperly works for addition and subtraction, multiplies and divides will *not* be correct in this form
 
 struct trig_edge {
-    iu16_x4_simd x_step_offset;
-    iu16_x4_simd y_step_offset;  
+    uint16_t x_step;
+    uint16_t y_step;
 
-    iu16_x4_simd w;
+    int16_t a, b;
+    int16_t w;
 };
 
 // filters all two's-compliment sign bits in a [u16_x4_simd]
@@ -71,14 +72,11 @@ struct trig_edge init_trig_edge(const struct clip_point* p0, const struct clip_p
     int16_t a = p0->y - p1->y;
     int16_t b = p1->x - p0->x;
 
-    uint16_t c = inv_tc(p0->x * p1->y - p0->y * p1->x - (is_top_left(p0, p1, false)) /* fill rule bias */);
+    int16_t c = p0->x * p1->y - p0->y * p1->x; // - (is_top_left(p0, p1, false)) /* fill rule bias */;
 
     // step deltas
-    uint16_t t = inv_tc(a * RENDER_QUAD_SIZE);
-    e.x_step_offset.o = (iu16_x4_simd){ t, t, t, t }.o;
-
-    t = inv_tc(b * RENDER_QUAD_SIZE);
-    e.y_step_offset.o = (iu16_x4_simd){ t, t, t, t }.o;
+    e.x_step = a * RENDER_QUAD_SIZE;
+    e.y_step = b * RENDER_QUAD_SIZE;
 
     // initial pixel block
 
@@ -87,9 +85,13 @@ struct trig_edge init_trig_edge(const struct clip_point* p0, const struct clip_p
 
     // edge function values at origin
 
-    e.w.o = inv_tc_i16_x4_simd((u16_x4_simd){ a * orig.v[0], a * o_x1, a * orig.v[0], a * o_x1 }) + 
-            inv_tc_i16_x4_simd((u16_x4_simd){ b * orig.v[1], b * orig.v[1], b * o_y1, b * o_y1 }) + 
-            (iu16_x4_simd){ c, c, c, c }.o;
+    // e.w.o = inv_tc_i16_x4_simd((u16_x4_simd){ a * orig.v[0], a * o_x1, a * orig.v[0], a * o_x1 }) + 
+    //         inv_tc_i16_x4_simd((u16_x4_simd){ b * orig.v[1], b * orig.v[1], b * o_y1, b * o_y1 }) + 
+    //         (iu16_x4_simd){ c, c, c, c }.o;
+
+    e.w = a * orig.v[0] + b * orig.v[1] + c;
+    e.a = a;
+    e.b = b;
 
     return e;
 }
@@ -231,10 +233,18 @@ void raster_trig(const struct gcs_fs_header* stream) {
     reset_fragment_output();
 
     for (; p.v[1] <= max_y; p.v[1] += RENDER_QUAD_SIZE) {
-        iu16_x4_simd ws[] = { e0.w, e1.w, e2.w };
+        // iu16_x4_simd ws[] = { e0.w, e1.w, e2.w };
+        uint16_t ws[] = { e0.w, e1.w, e2.w };
         
         for (p.v[0] = min_x; p.v[0] <= max_x; p.v[0] += RENDER_QUAD_SIZE) {
-            iu16_x4_simd mask = { .o = ws[0].o & ws[1].o & ws[2].o & SIGN_MASK };           
+            // iu16_x4_simd mask = { .o = ws[0].o & ws[1].o & ws[2].o & SIGN_MASK };           
+            // uint16_t mask = ws[0] & ws[1] & ws[2] & 0x8000;
+            u16_x4_simd mask = { 
+                ws[0] & ws[1] & ws[2] & 0x8000,
+                ws[0] + e0.a & ws[1] + e1.a & ws[2] + e2.a & 0x8000,
+                ws[0] + e0.b & ws[1] + e1.b & ws[2] + e2.b & 0x8000,
+                ws[0] + e0.a + e0.b & ws[1] + e1.a + e1.b & ws[2] + e2.a + e2.b & 0x8000,
+            };
             
             // condition equivalent to: any(mask.v >= 0) note: remember, we're in inverse two's-compliment mode here, therefore checking if any sign bits are 1
             if (mask.o) {
@@ -242,7 +252,7 @@ void raster_trig(const struct gcs_fs_header* stream) {
                 // format_dbg(" cv: 0x%hhx %hhu %hhu %hhu %hhu", pack_mask, (mask.v[0] >> 15), (mask.v[1] >> 14), (mask.v[2] >> 13), (mask.v[3] >> 12));
                 // format_dbg(" cv: 0x%llx %llx %llx %llx %llx", SIGN_MASK, ws[0].o, ws[1].o, ws[0].o & ws[1].o & ws[2].o & SIGN_MASK, (iu16_x4_simd){ .o = ws[0].o & ws[1].o & ws[2].o & SIGN_MASK }.o);
 
-                render_frag_quad(p, ws, pack_mask);
+                render_frag_quad(p, (iu16_x4_simd*)ws, pack_mask);
             } else {
                 // tile gap, stream buffered tiles
                 stream_fragment_output();
@@ -251,9 +261,9 @@ void raster_trig(const struct gcs_fs_header* stream) {
             sleep_us(500);
 
             // offset step
-            ws[0].o += e0.x_step_offset.o;
-            ws[1].o += e1.x_step_offset.o;
-            ws[2].o += e2.x_step_offset.o;
+            ws[0] += e0.x_step;
+            ws[1] += e1.x_step;
+            ws[2] += e2.x_step;
         }
 
         // row step, stream buffered tiles
@@ -263,9 +273,9 @@ void raster_trig(const struct gcs_fs_header* stream) {
         // sleep_ms(1000);
 
         // offset row
-        e0.w.o += e0.y_step_offset.o;
-        e1.w.o += e1.y_step_offset.o;
-        e2.w.o += e2.y_step_offset.o;
+        e0.w += e0.y_step;
+        e1.w += e1.y_step;
+        e2.w += e2.y_step;
     }
 }
 

@@ -54,8 +54,8 @@ void exec_fragment_stage(u16_x2_simd p, iu16_x4_simd* ws, uint8_t cv_mask) {
         // jit c shader main
     }
 
-    // struct color_tile ct = { (struct rgba_color){ p.v[0], p.v[1], 0, 255}, (struct rgba_color){ p.v[0] + 1, p.v[1], 0, 255}, (struct rgba_color){ p.v[0], p.v[1] + 1, 0, 255}, (struct rgba_color){ p.v[0] + 1, p.v[1] + 1, 0, 255} }; // pull_col_tile();
-    struct color_tile ct = { (struct rgba_color){ ws[0].v[0], ws[1].v[0], ws[2].v[0], 255}, (struct rgba_color){ ws[0].v[1], ws[1].v[1], ws[2].v[1], 255}, (struct rgba_color){ ws[0].v[2], ws[1].v[2], ws[2].v[2], 255}, (struct rgba_color){ ws[0].v[3], ws[1].v[3], ws[2].v[3], 255} }; // pull_col_tile();
+    struct color_tile ct = { (struct rgba_color){ p.v[0], p.v[1], 0, 255}, (struct rgba_color){ p.v[0] + 1, p.v[1], 0, 255}, (struct rgba_color){ p.v[0], p.v[1] + 1, 0, 255}, (struct rgba_color){ p.v[0] + 1, p.v[1] + 1, 0, 255} }; // pull_col_tile();
+    // struct color_tile ct = { (struct rgba_color){ ws[0].v[0], ws[1].v[0], ws[2].v[0], 255}, (struct rgba_color){ ws[0].v[1], ws[1].v[1], ws[2].v[1], 255}, (struct rgba_color){ ws[0].v[2], ws[1].v[2], ws[2].v[2], 255}, (struct rgba_color){ ws[0].v[3], ws[1].v[3], ws[2].v[3], 255} }; // pull_col_tile();
     // struct color_tile ct = { (struct rgba_color){ 255, 0, 255, 255 }, (struct rgba_color){ 255, 0, 255, 255 }, (struct rgba_color){ 255, 0, 255, 255 }, (struct rgba_color){ 255, 0, 255, 255 } };
     struct depth_tile dt = { 100, 100, 100, 100 };
     // hw interp blend and format conv
