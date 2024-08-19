@@ -181,7 +181,7 @@ int main() {
 
   struct gcs_begin begin_msg = {
     gcs_type_begin,
-    { 100, 100 },
+    { fb_extent[0], fb_extent[1] },
   };
 
   stream_shader(&begin_msg, sizeof(struct gcs_begin));
@@ -281,32 +281,35 @@ int main() {
 
       assert(f_output->fb_index_base < fb_extent[0] * fb_extent[1]); // protect against writting outside fb by a faulty index_base
 
-      depth_t* fb_dt = &fb_depth_buffer[f_output->fb_index_base];
       for (uint8_t i = 0; i < f_output->tile_count; i++) {
         // late depth-test
 
+        depth_t* fb_dt = &fb_depth_buffer[f_output->fb_index_base + i * RENDER_QUAD_SIZE * 2];
         const struct depth_tile* dt = &dt_buf[i];
 
-        uint8_t depth_mask = (fb_dt[0] < dt->d[0]) << 0 |
-                   (fb_dt[1] < dt->d[1]) << 1 |
-                   (fb_dt[2] < dt->d[2]) << 2 |
-                   (fb_dt[3] < dt->d[3]) << 3;
+        uint8_t depth_mask = (fb_dt[0] >= dt->d[0]) << 0 |
+                             (fb_dt[1] >= dt->d[1]) << 1 |
+                             (fb_dt[2] >= dt->d[2]) << 2 |
+                             (fb_dt[3] >= dt->d[3]) << 3;
+
+        depth_mask &= cv_mask_buf[i / 2] >> (4 * (i % 2)); // only here to test if depth test should be written back to fb
 
         memcpy(&fb_dt[0], (depth_mask & (1 << 0)) ? &dt->d[0] : &fb_dt[0], sizeof(depth_t));
         memcpy(&fb_dt[1], (depth_mask & (1 << 1)) ? &dt->d[1] : &fb_dt[1], sizeof(depth_t));
         memcpy(&fb_dt[2], (depth_mask & (1 << 2)) ? &dt->d[2] : &fb_dt[2], sizeof(depth_t));
         memcpy(&fb_dt[3], (depth_mask & (1 << 3)) ? &dt->d[3] : &fb_dt[3], sizeof(depth_t));
 
-        cv_mask_buf[i / 2] &= depth_mask << (4 * (i & 2));
-        fb_dt += sizeof(depth_t) * RENDER_QUAD_SIZE * 2;
+        // FIXME: this is not an ideal impl (probably just depth-test both 4-bit masks at once)
+        uint8_t cv_bit_offset = 4 * (i % 2);
+        cv_mask_buf[i / 2] &= depth_mask << cv_bit_offset | 0xF0 >> cv_bit_offset;
       }
 
-      struct rgba_color* fb_ct = &fb_color_buffer[f_output->fb_index_base];
       for (uint8_t i = 0; i < f_output->tile_count; i++) {
         // framebuffer patch
 
+        struct rgba_color* fb_ct = &fb_color_buffer[f_output->fb_index_base + i * RENDER_QUAD_SIZE * 2];
         const struct color_tile* ct = &ct_buf[i];
-        const uint8_t cv_mask = cv_mask_buf[i / 2] << 4 * (i % 2);
+        const uint8_t cv_mask = cv_mask_buf[i / 2] >> 4 * (i % 2);
 
         // PERF TODO: hw interp selector (mask out) and single dma write after
 
@@ -314,8 +317,6 @@ int main() {
         memcpy(&fb_ct[1], (cv_mask & (1 << 1)) ? &ct->c[1] : &fb_ct[1], sizeof(struct rgba_color));
         memcpy(&fb_ct[2], (cv_mask & (1 << 2)) ? &ct->c[2] : &fb_ct[2], sizeof(struct rgba_color));
         memcpy(&fb_ct[3], (cv_mask & (1 << 3)) ? &ct->c[3] : &fb_ct[3], sizeof(struct rgba_color));
-        
-        fb_ct += sizeof(struct rgba_color) * RENDER_QUAD_SIZE * 2;
       }      
     };
 

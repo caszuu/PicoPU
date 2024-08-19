@@ -29,8 +29,8 @@ struct trig_edge {
     iu16_x4_simd w;
 };
 
-// filters all two's-compliment sign bits in a [i16_x4_simd]
-#define SIGN_MASK (0x8000) | (0x8000 << 16) | (0x8000ULL << 32) | (0x8000ULL << 48)
+// filters all two's-compliment sign bits in a [u16_x4_simd]
+#define SIGN_MASK ((0x8000) | (0x8000 << 16) | (0x8000ULL << 32) | (0x8000ULL << 48))
 
 #define inv_tc(signed_val) (signed_val ^ 0x8000) /*only flip sign bit*/
 #define inv_tc_i16_x4_simd(...) (__VA_ARGS__.o ^ SIGN_MASK)
@@ -71,7 +71,7 @@ struct trig_edge init_trig_edge(const struct clip_point* p0, const struct clip_p
     int16_t a = p0->y - p1->y;
     int16_t b = p1->x - p0->x;
 
-    uint16_t c = inv_tc(p0->x * p1->y - p0->y * p1->x + (is_top_left(p0, p1, false) * -1) /* fill rule bias */);
+    uint16_t c = inv_tc(p0->x * p1->y - p0->y * p1->x - (is_top_left(p0, p1, false)) /* fill rule bias */);
 
     // step deltas
     uint16_t t = inv_tc(a * RENDER_QUAD_SIZE);
@@ -148,7 +148,7 @@ void raster_trig(const struct gcs_fs_header* stream) {
     // confusing note: due to an unknown cause, when [stream] is used in this ptr lookup instead of the direct [packet_buffer] (which should be the same ptr)
     //                 the pico for some reason crashes on reads of [clip_points], maybe a miscompile or some other obscure reason, but i sure didn't find it
 
-    struct clip_point clip_points[3] = { { 0, 0, UINT32_MAX }, { 0, 100, UINT32_MAX }, { 100, 100, UINT32_MAX } };// (struct clip_point*)(packet_buffer + sizeof(struct gcs_fs_header) + sizeof(struct clip_point) * 3 * SHADER_CHIP_ID);
+    struct clip_point clip_points[3] = { { 0, 0, 100 }, { 0, 127, 100 }, { 127, 127, 100 } };// (struct clip_point*)(packet_buffer + sizeof(struct gcs_fs_header) + sizeof(struct clip_point) * 3 * SHADER_CHIP_ID);
     format_dbg("p: %u", clip_points[1].y);
     
     // interp. clip bounding box (trig bound box, screen box, scissors and frag_stream box)
@@ -185,7 +185,7 @@ void raster_trig(const struct gcs_fs_header* stream) {
 
     screen_axis_t min_y = interp1->peek[0];
 
-    interp1->base[1] = (int32_t)fb_extent[0]; // initial min value (screen clipping)
+    interp1->base[1] = (int32_t)fb_extent[0] - 1; // initial min value (screen clipping)
     interp1->base[0] = clip_points[0].x; // initial max value
 
     interp1->accum[0] = clip_points[1].x;
@@ -200,6 +200,9 @@ void raster_trig(const struct gcs_fs_header* stream) {
 
     interp1->base[1] = (int32_t)stream->line_offsets[SHADER_CHIP_ID] + (int32_t)stream->line_counts[SHADER_CHIP_ID]; // initial min value (screen clipping)
     interp1->base[0] = clip_points[0].x; // initial max value
+
+    interp1->accum[0] = (int32_t)fb_extent[1] - 1;
+    interp1->base[1] = interp1->peek[0];
 
     interp1->accum[0] = clip_points[1].x;
     interp1->base[0] = interp1->peek[0];
@@ -225,20 +228,19 @@ void raster_trig(const struct gcs_fs_header* stream) {
     struct trig_edge e1 = init_trig_edge(&clip_points[2], &clip_points[0], p);
     struct trig_edge e2 = init_trig_edge(&clip_points[0], &clip_points[1], p);
 
-    format_dbg("starting raster");
-    sleep_ms(1000);
-
     reset_fragment_output();
 
     for (; p.v[1] <= max_y; p.v[1] += RENDER_QUAD_SIZE) {
         iu16_x4_simd ws[] = { e0.w, e1.w, e2.w };
         
         for (p.v[0] = min_x; p.v[0] <= max_x; p.v[0] += RENDER_QUAD_SIZE) {
-            iu16_x4_simd mask = { (ws[0].o | ws[1].o | ws[2].o) & SIGN_MASK };
-
+            iu16_x4_simd mask = { .o = ws[0].o & ws[1].o & ws[2].o & SIGN_MASK };           
+            
             // condition equivalent to: any(mask.v >= 0) note: remember, we're in inverse two's-compliment mode here, therefore checking if any sign bits are 1
             if (mask.o) {
-                uint8_t pack_mask = ((mask.o >> 15) & 1) | ((mask.o >> 16 + 14) & 1) | ((mask.o >> 32 + 13) & 1) | ((mask.o >> 48 + 12) & 1);
+                uint8_t pack_mask = (mask.v[0] >> 15) | (mask.v[1] >> 14) | (mask.v[2] >> 13) | (mask.v[3] >> 12);
+                // format_dbg(" cv: 0x%hhx %hhu %hhu %hhu %hhu", pack_mask, (mask.v[0] >> 15), (mask.v[1] >> 14), (mask.v[2] >> 13), (mask.v[3] >> 12));
+                // format_dbg(" cv: 0x%llx %llx %llx %llx %llx", SIGN_MASK, ws[0].o, ws[1].o, ws[0].o & ws[1].o & ws[2].o & SIGN_MASK, (iu16_x4_simd){ .o = ws[0].o & ws[1].o & ws[2].o & SIGN_MASK }.o);
 
                 render_frag_quad(p, ws, pack_mask);
             } else {
