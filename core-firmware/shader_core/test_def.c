@@ -40,7 +40,7 @@ void stream_fragment_output() {
     }
 }
 
-void exec_fragment_stage(u16_x2_simd p, iu16_x4_simd* ws, uint8_t cv_mask) {
+void exec_fragment_stage(u16_x2_simd p, int16_t* ws, uint8_t cv_mask) {
     // select depth
 
     // patch_ds_tile(&dt); // only if no gl_FragDepth writes
