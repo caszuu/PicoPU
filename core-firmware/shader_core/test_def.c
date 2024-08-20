@@ -63,8 +63,6 @@ void exec_fragment_stage(u16_x2_simd p, int16_t* ws, uint8_t cv_mask) {
     if (fo_header.tile_count == 0) {
         // calc the pixel index of the first tile
 
-        format_dbg("x: %d %d y: %d %d  %d", p.v[0], p.v[1], (p.v[0] / 2) * 4, (p.v[1] / 2 * 2) * fb_extent[0], fb_extent[0]);
-
         fo_header.fb_index_base = (p.v[0] / 2) * 4 + (p.v[1] / 2 * 2) * fb_extent[0] /* tile index */;
                                   // (p.v[0] % 2) + (p.v[1] % 2) * 2 /* tile offset */;
     }
@@ -72,9 +70,7 @@ void exec_fragment_stage(u16_x2_simd p, int16_t* ws, uint8_t cv_mask) {
     mask_buf[fo_header.tile_count / 2] |= cv_mask << (4 * (fo_header.tile_count % 2));
     ct_buf[fo_header.tile_count] = ct;
     dt_buf[fo_header.tile_count] = dt;
-    
-    // format_dbg("fp: %hhx %hhx %hhx %hhx", ct.c[0].r, ct.c[0].g, ct.c[0].b, ct.c[0].a);
-    
+   
     fo_header.tile_count++;
 
     if (fo_header.tile_count == MAX_INLINE_TILES) {

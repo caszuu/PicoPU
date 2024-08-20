@@ -246,26 +246,13 @@ void raster_trig(const struct gcs_fs_header* stream) {
 
             // condition equivalent to: any(w + tile_offset >= 0)
             if (cv_mask) {
-                format_dbg("w: %hi %hi %hi", ws[0], ws[1], ws[2]);
-                format_dbg("cv: %hi %hi %hi %hi", 
-                           (ws[0] | ws[1] | ws[2]),
-                           (ws[0] + e0.a | ws[1] + e1.a | ws[2] + e2.a),
-                           (ws[0] + e0.b | ws[1] + e1.b | ws[2] + e2.b),
-                           (ws[0] + e0.a + e0.b | ws[1] + e1.a + e1.b | ws[2] + e2.a + e2.b));
-
-                format_dbg("cv: %hi %hi %hi %hi", 
-                           (ws[0] | ws[1] | ws[2]) >= 0,
-                           (ws[0] + e0.a | ws[1] + e1.a | ws[2] + e2.a) >= 0,
-                           (ws[0] + e0.b | ws[1] + e1.b | ws[2] + e2.b) >= 0,
-                           (ws[0] + e0.a + e0.b | ws[1] + e1.a + e1.b | ws[2] + e2.a + e2.b) >= 0);               
-
                 render_frag_quad(p, ws, cv_mask);
             } else {
                 // tile gap, stream buffered tiles
                 stream_fragment_output();
             }
 
-            sleep_us(500);
+            sleep_us(200);
 
             // offset step
             ws[0] += e0.x_step;

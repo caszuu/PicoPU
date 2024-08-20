@@ -95,6 +95,7 @@ void setup_serial(int speed, int parity) {
   tty.c_cc[VTIME] = 5;            // 0.5 seconds read timeout
 
   tty.c_iflag &= ~(IXON | IXOFF | IXANY); // shut off xon/xoff ctrl
+  tty.c_iflag &= ~(IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL | IXON);
 
   tty.c_cflag |= (CLOCAL | CREAD);// ignore modem controls,
                                   // enable reading
