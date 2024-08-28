@@ -32,15 +32,15 @@ bool is_top_left(const struct clip_point *p0, const struct clip_point *p1, bool 
 struct trig_edge {
     int16_t a, b;
     int16_t x_step, y_step;
-    
-    int16_t w;
+
+    int32_t w;
 };
 
 struct trig_edge init_trig_edge(const struct clip_point *p0,
                                 const struct clip_point *p1,
                                 const u16_x2_simd orig) {
     struct trig_edge e;
-    
+
     // edge setup
 
     // FIXME: check for possible overflows in barycentric calcs.
@@ -95,7 +95,7 @@ void render_frag_quad(u16_x2_simd p, int32_t ws[3 * 4], int16_t area,
 
     // execute fragment
 
-    exec_fragment_stage(p, ws, cv_mask);
+    exec_fragment_stage(p, ws, area, cv_mask);
 }
 
 // there might be better way to rasterize along edges based on
@@ -122,7 +122,7 @@ void raster_trig(const struct gcs_fs_header *stream) {
     };
 
     format_dbg("p: %u", clip_points[1].y);
-    
+
     // interp. clip bounding box (trig bound box, screen box, scissors and frag_stream box)
 
     // min/max bounds by "inverse" clamping all different bboxes
@@ -141,9 +141,6 @@ void raster_trig(const struct gcs_fs_header *stream) {
 
     interp1->accum[0] = clip_points[2].x;
 
-    // interp1->accum[0] = scissors_state;
-    // interp1->base[0] = interp1->peek[0];
-
     screen_axis_t min_x = interp1->peek[0];
 
     // min_y
@@ -156,9 +153,6 @@ void raster_trig(const struct gcs_fs_header *stream) {
 
     interp1->accum[0] = clip_points[2].y;
 
-    // interp1->accum[0] = scissors_state;
-    // interp1->base[1] = interp1->peek[0];
-
     screen_axis_t min_y = interp1->peek[0];
 
     // max_x
@@ -170,9 +164,6 @@ void raster_trig(const struct gcs_fs_header *stream) {
     interp1->base[0] = interp1->peek[0];
 
     interp1->accum[0] = clip_points[2].x;
-
-    // interp1->accum[0] = scissors_state;
-    // interp1->base[1] = interp1->peek[0];
 
     screen_axis_t max_x = interp1->peek[0];
 
@@ -205,11 +196,15 @@ void raster_trig(const struct gcs_fs_header *stream) {
     struct trig_edge e1 = init_trig_edge(&clip_points[2], &clip_points[0], p);
     struct trig_edge e2 = init_trig_edge(&clip_points[0], &clip_points[1], p);
 
+    // precalc. double trig area (for barycentric norm)
+    int16_t trig_area = e0.a * clip_points[0].x + e0.b * clip_points[0].y +
+                        (clip_points[1].x * clip_points[2].y - clip_points[1].y * clip_points[2].x);
+
     reset_fragment_output();
 
     for (; p.v[1] <= max_y; p.v[1] += RENDER_QUAD_SIZE) {
-        int16_t ws[] = { e0.w, e1.w, e2.w };
-        
+        int16_t ws[] = {e0.w, e1.w, e2.w};
+
         for (p.v[0] = min_x; p.v[0] <= max_x; p.v[0] += RENDER_QUAD_SIZE) {
             // PERF TODO: early-out by w test
 
@@ -222,15 +217,27 @@ void raster_trig(const struct gcs_fs_header *stream) {
             //
             // if you find a more optimal way to test and iterate the w params
             // feel free to PR!
-            
-            uint8_t cv_mask = ((ws[0] | ws[1] | ws[2]) >= 0) << 0 |
-                              ((ws[0] + e0.a | ws[1] + e1.a | ws[2] + e2.a) >= 0) << 1 |
-                              ((ws[0] + e0.b | ws[1] + e1.b | ws[2] + e2.b) >= 0) << 2 |
-                              ((ws[0] + e0.a + e0.b | ws[1] + e1.a + e1.b | ws[2] + e2.a + e2.b) >= 0) << 3;
+
+            /* clang-format off */
+
+            int32_t w_tile[3 /*edge count*/ * 4 /*tile pixel count*/] = {
+                ws[0], ws[1], ws[2],
+                ws[0] + e0.a, ws[1] + e1.a, ws[2] + e2.a,
+                ws[0] + e0.b, ws[1] + e1.b, ws[2] + e2.b,
+                ws[0] + e0.a + e0.b, ws[1] + e1.a + e1.b, ws[2] + e2.a + e2.b,
+            };
+
+            uint8_t cv_mask =
+                ((w_tile[0 + 0] | w_tile[0 + 1] | w_tile[0 + 2]) >= 0) << 0 |
+                ((w_tile[3 + 0] | w_tile[3 + 1] | w_tile[3 + 2]) >= 0) << 1 |
+                ((w_tile[6 + 0] | w_tile[6 + 1] | w_tile[6 + 2]) >= 0) << 2 |
+                ((w_tile[9 + 0] | w_tile[9 + 1] | w_tile[9 + 2]) >= 0) << 3;
+
+            /* clang-format on */
 
             // condition equivalent to: any(w + tile_offset >= 0)
             if (cv_mask) {
-                render_frag_quad(p, ws, cv_mask);
+                render_frag_quad(p, w_tile, trig_area, cv_mask);
             } else {
                 // tile gap, stream buffered tiles
                 stream_fragment_output();

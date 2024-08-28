@@ -1,28 +1,17 @@
-#include "graphics_state.h"
 #include "../common/cluster_bus.h"
+#include "graphics_state.h"
 
-#include <stdlib.h>
-#include <stdio.h>
 #include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 /* vertex pipeline stages */
 
-// points to the start of the vertex assemblies in one of the packet_buffer
-// the memory range is gonna be reused of the
-uint8_t* vertex_in_pbuf;
+bool exec_vertex_stage(struct gcs_vs_header *h, void *in_buf);
 
-// gcs_po buffers
-#define po_buf_size(vert_count) sizeof(struct gcs_po_header) + sizeof(screen_axis_t) * (vert_count / 3) + sizeof(struct clip_point) * vert_count + output_vertex_stride * vert_count
-
-screen_axis_t frag_size_buf[sizeof(screen_axis_t) * (MAX_VERTICES_PER_STREAM / 3)];
-struct clip_point clip_buf[sizeof(struct clip_point) * MAX_VERTICES_PER_STREAM];
-uint8_t vertex_out_buf[MAX_VERTEX_OUTPUT_STRIDE * MAX_VERTICES_PER_STREAM];
-
-bool exec_vertex_stage(uint32_t vertex_index, void* in_buf, struct clip_point* clip_buf, void* out_buf);
-
-void process_vertex_stream(struct gcs_vs_header* stream) {
-    if (!stream->vertex_counts[SHADER_CHIP_ID]) { // no verticies for this chip
-        struct gcs_po_header p = { gcs_type_po, 0 };
+void process_vertex_stream(struct gcs_vs_header *stream) {
+    if (!stream->primitive_count) { // no verticies for this chip
+        struct gcs_po_header p = {gcs_type_po, 0};
         uint16_t p_size = sizeof(p);
 
         format_dbg("empty vertex stream");
@@ -34,66 +23,9 @@ void process_vertex_stream(struct gcs_vs_header* stream) {
         return;
     }
 
-    uint8_t vertex_count = stream->vertex_counts[SHADER_CHIP_ID];
+    uint8_t *in_buf = (uint8_t *)(stream) + sizeof(struct gcs_vs_header);
 
-    vertex_in_pbuf = (uint8_t*)(stream) + sizeof(struct gcs_vs_header);
+    // TODO: assign core1 vertices
 
-    // assign core1 vertices
-    
-    // exec vertex shader and primitive culling
-    // FIXME: hard-coded for trigs
-    // FIXME: sanity size checks
-
-    const uint8_t per_prim_vertex_count = 3;
-
-    bool is_visible = false;
-    uint8_t prim_vertex_index = 0;
-    uint8_t prim_index = 0;
-
-    uint16_t output_vertex_index = 0;
-
-    format_dbg("starting vertex stream");
-
-    for (uint32_t vertex_index = 0; vertex_index < vertex_count; vertex_index++) {
-        is_visible |= exec_vertex_stage(
-            vertex_index, 
-            vertex_in_pbuf + vertex_index * vertex_stride,
-            clip_buf + output_vertex_index, 
-            vertex_out_buf + output_vertex_index * output_vertex_stride
-        );
-
-        output_vertex_index++;
-
-        if (++prim_vertex_index == per_prim_vertex_count) {
-            // primitive finish - cull or store
-
-            // FIXME: ccw/cw backface/frontface culling
-            if (is_visible) {
-                output_vertex_index -= per_prim_vertex_count;
-            }
-            frag_size_buf[prim_index] = fb_extent[0]; // FIXME: temp.
-
-            // reset primitive state
-
-            is_visible = false;
-            prim_vertex_index = 0;
-
-            prim_index++;
-            continue;
-        }
-    }
-    
-    format_dbg("finished vertex stream");
-
-    struct gcs_po_header p = { gcs_type_po, vertex_count / 3 };
-    uint16_t p_size = po_buf_size(vertex_count);
-
-    put_buffer(&p_size, sizeof(uint16_t));
-    put_buffer(&p, sizeof(p));
-
-    put_buffer(frag_size_buf, sizeof(screen_axis_t) * p.primitive_count);
-    put_buffer(clip_buf, sizeof(struct clip_point) * vertex_count);
-    put_buffer(vertex_out_buf, output_vertex_stride * vertex_count);
-
-    stdio_flush();
+    exec_vertex_stage(stream, in_buf);
 }
