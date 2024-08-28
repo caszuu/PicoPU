@@ -1,14 +1,14 @@
-#include "graphics_state.h"
 #include "../common/cluster_bus.h"
+#include "graphics_state.h"
 
 #include "chip_state.h"
 
-#include "pico/stdlib.h"
 #include "hardware/watchdog.h"
+#include "pico/stdlib.h"
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-#include <stdbool.h>
 
 shader_chip_state_t chip_state;
 
@@ -44,16 +44,22 @@ int main() {
 
     stdio_set_translate_crlf(&stdio_usb, false);
 
-    enter_graphics_state();
+    struct gcs_begin b = {
+        .type = gcs_type_begin,
+        .fb_extent = {128, 128},
+        .view_transform = {{128.f / 2, 0 + 128.f / 2}, {128.f / 2, 0 + 128.f / 2}, {1.f, 0.f}},
+    };
+
+    enter_graphics_state(&b);
     return 0;
 
     struct gcs_ready p = {
         gcs_type_ready,
-    }; 
+    };
 
     while (true) {
         uint8_t buf[MAX_GCS_PACKET_SIZE];
-        *(uint16_t*)&buf[0] = sizeof(struct gcs_ready);
+        *(uint16_t *)&buf[0] = sizeof(struct gcs_ready);
         memcpy(buf + sizeof(uint16_t), &p, sizeof(struct gcs_ready));
 
         fwrite(&buf, sizeof(uint16_t) + sizeof(struct gcs_ready), 1, stdout);

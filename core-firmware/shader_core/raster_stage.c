@@ -6,21 +6,28 @@
 #include <hardware/interp.h>
 
 #include "pico/stdlib.h"
-#include <stdio.h>
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
 
 /* rasterization stage */
 
-bool is_top_left(const struct clip_point* p0, const struct clip_point* p1, bool is_cw) {
-    return (p0->y == p1->y && (p0->x > p1->x != is_cw)) || // is_top - the is_cw is techically not correct when p0[0] == p1[0], but close enough
+void exec_fragment_stage(u16_x2_simd p, int32_t w_tile[3 * 4], int16_t area,
+                         uint8_t cv_mask);
+void stream_fragment_output();
+void reset_fragment_output();
+
+// rasterizer and fragment stage implementation originaly from the amazing
+// Optimizing Software Occlusion Culling series
+// https://fgiesen.wordpress.com/2013/02/17/optimizing-sw-occlusion-culling-index/
+
+/* trig rasterizer */
+
+bool is_top_left(const struct clip_point *p0, const struct clip_point *p1, bool is_cw) {
+    return (p0->y == p1->y && (p0->x > p1->x != is_cw)) || // is_top - the is_cw is techically not correct when
+                                                           // p0[0] == p1[0], but close enough
            (p0->y > p1->y != is_cw);                       // is_left - again, also not correct for is_cw trigs
 }
-
-// "inverse" two's-compliment: due to bit-packed ex_simd types not being well defined when crossing the signed 0 <-> -1 barrier (causing an overflow),
-//                             we invert the sign bit turning INT32_MIN into 0x0000, INT32_MAX into 0xFFFF and most notably 0 into 0x8000 and -1 into 0x7FFF
-//                             closing the overflow gap between the positive and negative halfs and allowing us to do unsigned arithmetic with signed values
-//                             note: this only porperly works for addition and subtraction, multiplies and divides will *not* be correct in this form
 
 struct trig_edge {
     int16_t a, b;
@@ -29,42 +36,12 @@ struct trig_edge {
     int16_t w;
 };
 
-// filters all two's-compliment sign bits in a [u16_x4_simd]
-#define SIGN_MASK ((0x8000) | (0x8000 << 16) | (0x8000ULL << 32) | (0x8000ULL << 48))
-
-#define inv_tc(signed_val) (signed_val ^ 0x8000) /*only flip sign bit*/
-#define inv_tc_i16_x4_simd(...) (__VA_ARGS__.o ^ SIGN_MASK)
-#define inv_tc_i16_x2_simd(...) (__VA_ARGS__.o ^ (SIGN_MASK & UINT32_MAX))
-
-struct trig_edge init_trig_edge(const struct clip_point* p0, const struct clip_point* p1, const u16_x2_simd orig) {
+struct trig_edge init_trig_edge(const struct clip_point *p0,
+                                const struct clip_point *p1,
+                                const u16_x2_simd orig) {
     struct trig_edge e;
     
     // edge setup
-
-    /*
-    int16_t a = inv_tc(p0->y - p1->y);
-    int16_t b = inv_tc(p1->x - p0->x);
-
-    uint16_t c = inv_tc(p0->x * p1->y - p0->y * p1->x + (is_top_left(p0, p1, false) * -1));
-
-    // step deltas
-    uint16_t t = inv_tc(a * RENDER_QUAD_SIZE);
-    e.x_step_offset.o = (iu16_x4_simd){ t, t, t, t }.o;
-
-    t = inv_tc(b * RENDER_QUAD_SIZE);
-    e.y_step_offset.o = (iu16_x4_simd){ t, t, t, t }.o;
-
-    // initial pixel block
-
-    iu16_x4_simd x = { inv_tc_i16_x4_simd((u16_x4_simd){ orig.o + (u16_x4_simd){ 0, 1, 0, 1 }.o }) };
-    iu16_x4_simd y = { inv_tc_i16_x4_simd((u16_x4_simd){ orig.o + (u16_x4_simd){ 0, 0, 1, 1 }.o }) };
-
-    // edge function values at origin
-
-    e.w.o = (iu16_x4_simd){ a, a, a, a }.o * x.o + (iu16_x4_simd){ b, b, b, b }.o * y.o + (iu16_x4_simd){ c, c, c, c }.o;
-    */
-
-    /* this is the quivalent of the above (bacause we can't multiply with _simd) */
 
     // FIXME: check for possible overflows in barycentric calcs.
     // FIXME: re-enable (faulty?) top-left fill rule
@@ -73,8 +50,6 @@ struct trig_edge init_trig_edge(const struct clip_point* p0, const struct clip_p
     e.b = p1->x - p0->x;
 
     int32_t c = p0->x * p1->y - p0->y * p1->x; // - (is_top_left(p0, p1, false)) /* fill rule bias */;
-
-    format_dbg("c: %i %hi %hi", c, e.a, e.b);
 
     // step deltas
     e.x_step = e.a * RENDER_QUAD_SIZE;
@@ -90,11 +65,8 @@ struct trig_edge init_trig_edge(const struct clip_point* p0, const struct clip_p
 // perform early depth test and execute fragment shaders
 // an aligned 2x2 quad of pixels
 
-void exec_fragment_stage(u16_x2_simd p, int16_t* ws, uint8_t cv_mask);
-void stream_fragment_output();
-void reset_fragment_output();
-
-void render_frag_quad(u16_x2_simd p, int16_t* ws, uint8_t cv_mask /*note: top 4-bit will be 1*/) {
+void render_frag_quad(u16_x2_simd p, int32_t ws[3 * 4], int16_t area,
+                      uint8_t cv_mask /*note: top 4-bit will be 1*/) {
     /* request_ds_tile(p); // PERF TODO: request p+1 tile for parallel wait
 
     // eraly depth-test
@@ -129,19 +101,26 @@ void render_frag_quad(u16_x2_simd p, int16_t* ws, uint8_t cv_mask /*note: top 4-
 // there might be better way to rasterize along edges based on
 // interp hw to skip most outside pixels but this will do for now
 
-// rasterizer and fragment stage implementation originaly from the amazing Optimizing Software Occlusion Culling series
-// https://fgiesen.wordpress.com/2013/02/17/optimizing-sw-occlusion-culling-index/
-
 // TODO: subpixel_precision, perf_counters
-// currently implements: non-corrected top-left fill rule, 2x2 tile steps, expects cw trigs (corrected in vertex stage)
+
+// currently implements: non-corrected top-left fill rule, 2x2 tile steps,
+// expects cw trigs (corrected in vertex stage)
 
 extern uint8_t packet_buffer[MAX_GCS_PACKET_SIZE];
 
-void raster_trig(const struct gcs_fs_header* stream) {
-    // confusing note: due to an unknown cause, when [stream] is used in this ptr lookup instead of the direct [packet_buffer] (which should be the same ptr)
-    //                 the pico for some reason crashes on reads of [clip_points], maybe a miscompile or some other obscure reason, but i sure didn't find it
+void raster_trig(const struct gcs_fs_header *stream) {
+    // confusing note: due to an unknown cause, when [stream] is used in this
+    //                 ptr lookup instead of the direct [packet_buffer] (which
+    //                 should be the same ptr) the pico for some reason crashes
+    //                 on reads of [clip_points], maybe a miscompile or some
+    //                 other obscure reason, but i sure didn't find it
 
-    struct clip_point clip_points[3] = { { 0, 0, 100 }, { 127, 100, 100 }, { 0, 127, 100 } };// (struct clip_point*)(packet_buffer + sizeof(struct gcs_fs_header) + sizeof(struct clip_point) * 3 * SHADER_CHIP_ID);
+    struct clip_point clip_points[3] = {
+        {0, 0, 100},
+        {127, 128, 100},
+        {0, 127, 100},
+    };
+
     format_dbg("p: %u", clip_points[1].y);
     
     // interp. clip bounding box (trig bound box, screen box, scissors and frag_stream box)
@@ -152,7 +131,9 @@ void raster_trig(const struct gcs_fs_header* stream) {
     interp_config_set_signed(&cfg, true);
     interp_set_config(interp1, 0, &cfg);
 
-    interp1->base[0] = (int32_t)0; // initial max value (screen clipping)
+    // min_x
+
+    interp1->base[0] = (int32_t)0;       // initial max value (screen clipping)
     interp1->base[1] = clip_points[0].x; // initial min value
 
     interp1->accum[0] = clip_points[1].x;
@@ -165,8 +146,10 @@ void raster_trig(const struct gcs_fs_header* stream) {
 
     screen_axis_t min_x = interp1->peek[0];
 
-    interp1->base[0] = (int32_t)stream->line_offsets[SHADER_CHIP_ID]; // initial max value (screen clipping)
-    interp1->base[1] = clip_points[0].y; // initial min value
+    // min_y
+
+    interp1->base[0] = (int32_t)stream->line_offset; // initial max value (screen clipping)
+    interp1->base[1] = clip_points[0].y;             // initial min value
 
     interp1->accum[0] = clip_points[1].y;
     interp1->base[1] = interp1->peek[0];
@@ -178,8 +161,10 @@ void raster_trig(const struct gcs_fs_header* stream) {
 
     screen_axis_t min_y = interp1->peek[0];
 
+    // max_x
+
     interp1->base[1] = (int32_t)fb_extent[0] - 1; // initial min value (screen clipping)
-    interp1->base[0] = clip_points[0].x; // initial max value
+    interp1->base[0] = clip_points[0].x;          // initial max value
 
     interp1->accum[0] = clip_points[1].x;
     interp1->base[0] = interp1->peek[0];
@@ -191,19 +176,18 @@ void raster_trig(const struct gcs_fs_header* stream) {
 
     screen_axis_t max_x = interp1->peek[0];
 
-    interp1->base[1] = (int32_t)stream->line_offsets[SHADER_CHIP_ID] + (int32_t)stream->line_counts[SHADER_CHIP_ID]; // initial min value (screen clipping)
-    interp1->base[0] = clip_points[0].x; // initial max value
+    // max_y
+
+    interp1->base[1] = (int32_t)stream->line_offset + (int32_t)stream->line_count; // initial min value (screen clipping)
+    interp1->base[0] = clip_points[0].y;                                           // initial max value
 
     interp1->accum[0] = (int32_t)fb_extent[1] - 1;
     interp1->base[1] = interp1->peek[0];
 
-    interp1->accum[0] = clip_points[1].x;
+    interp1->accum[0] = clip_points[1].y;
     interp1->base[0] = interp1->peek[0];
 
-    interp1->accum[0] = clip_points[2].x;
-
-    // interp1->accum[0] = scissors_state;
-    // interp1->base[1] = interp1->peek[0];
+    interp1->accum[0] = clip_points[2].y;
 
     screen_axis_t max_y = interp1->peek[0];
 
@@ -211,7 +195,7 @@ void raster_trig(const struct gcs_fs_header* stream) {
 
     /* rasterize */
 
-    u16_x2_simd p = { min_y, min_x };
+    u16_x2_simd p = {min_y, min_x};
 
     format_dbg("raster prepared: %d %d %d %d", min_x, min_y, max_x, max_y);
     sleep_ms(100);
@@ -232,9 +216,9 @@ void raster_trig(const struct gcs_fs_header* stream) {
             // from what i can tell, for a non-simd system, this is close to the
             // most optimal [ws] and [cv_mask] calculation as i can get on godbold with gcc (-O2)
             //
-            // giving the compiler as much room to optimise yields the best results,
-            // try not to store the actual values and only do tests on them because
-            // the m33's register count is the bottleneck here (i think)
+            // giving the compiler as much room as possible to optimize yields
+            // the best results, the m33's register cound and alu is the
+            // bottlenect here (i think)
             //
             // if you find a more optimal way to test and iterate the w params
             // feel free to PR!
@@ -273,10 +257,10 @@ void raster_trig(const struct gcs_fs_header* stream) {
     }
 }
 
-void process_fragment_stream(struct gcs_fs_header* stream) {
+void process_fragment_stream(struct gcs_fs_header *stream) {
     raster_trig(stream);
 
-    struct gcs_ready p = { gcs_type_ready };
+    struct gcs_ready p = {gcs_type_ready};
     uint16_t p_size = sizeof(p);
 
     put_buffer(&p_size, sizeof(uint16_t));

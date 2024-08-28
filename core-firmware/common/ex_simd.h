@@ -29,19 +29,7 @@ typedef union {
     uint32_t o;
 } u16_x2_simd;
 
-// inverse two's-compliments helper types
-
-typedef u8_x4_simd iu8_x4_simd;
-typedef u8_x2_simd iu8_x2_simd;
-typedef u16_x4_simd iu16_x4_simd;
-typedef u16_x2_simd iu16_x2_simd;
-
 // signed variants, same constrains apply, *only* add, sub, bitwise ops, no overflow or underflow
-
-// note: signed types are disabled because the "overflow" condition applies to the binary representation
-//       which means that crossing the 0 <-> -1 barrier was technically *and* practically undefined behaviour
-
-// to make use of signed-like arithmetic, look at raster_stage.c with it's "inverse" two's-compliment repr
 
 /* typedef union {
     int8_t v[4];

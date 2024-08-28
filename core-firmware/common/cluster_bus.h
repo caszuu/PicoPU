@@ -13,10 +13,6 @@
 
 /* common structs */
 
-struct line_region {
-    screen_axis_t line_begin, line_end; // defines range [line_begin, line_end)
-};
-
 #define RENDER_QUAD_SIZE 2 // note: size of one axis
 
 struct color_tile {
@@ -43,13 +39,16 @@ enum gcs_types {
 
     gcs_type_fault = 32,
     gcs_type_dbg,
-}; typedef uint8_t gcs_type_t;
+};
+typedef uint8_t gcs_type_t;
 
 // begin graphics command stream, resets all shader chips
 struct gcs_begin {
     gcs_type_t type;
     
     screen_axis_t fb_extent[2];
+    float view_transform[3][2];
+
     // fb_format?
 };
 
@@ -69,14 +68,14 @@ struct gcs_gp_conf_header {
     /* [fragment_mcode_size] bytes of fragment mcode follows */
 };
 
-// update constant buffer
+// update a 64KB constant buffer range
 struct gcs_cb_header {
     gcs_type_t type;
     
-    uint8_t buffer_index;
-    uint16_t buffer_size;
+    uint16_t range_offset;
+    uint16_t range_size;
 
-    /* [buffer_size] of bytes follow */
+    /* [range_size] of bytes follow */
 };
 
 // vertex stream, streams multiple vertex assemblies on which the vertex shader should be run
