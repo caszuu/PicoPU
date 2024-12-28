@@ -17,9 +17,9 @@ struct rgba_color {
 typedef float depth_t;
 
 enum primitive_mode {
-    e_primm_null = 0,
-    e_primm_point,
-    e_primm_line,
+    e_prim_null = 0,
+    e_prim_point,
+    e_prim_line,
     e_prim_trig,
 };
 typedef enum primitive_mode primitive_mode_t;

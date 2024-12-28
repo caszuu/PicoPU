@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <string.h>
 
-shader_chip_state_t chip_state;
+struct chip_state chip_state;
 
 void shader_stall() {
     // drive debug led to fault color
@@ -29,43 +29,58 @@ void shader_stall() {
     }
 }
 
+static enum scs_cmd_type *await_scs();
+
+static void enter_scs() {
+    // start listening on scs commands
+
+    while (true) {
+        enum scs_cmd_type *cmd = 0; // await_scs();
+
+        switch (*cmd) {
+        case scs_type_ld_cbuf:
+            struct scs_ld_cbuf *ld = (struct scs_ld_cbuf *)(cmd);
+            memcpy(chip_state.cbuf + ld->range_offset, (void *)(ld + 1), ld->range_size);
+            break;
+
+        case scs_type_ld_bin:
+            struct scs_ld_bin *ldb = (struct scs_ld_bin *)(cmd);
+            memcpy(chip_state.prog_buf + ldb->bin_buf_offset, (void *)(ld + 1), ldb->bin_size);
+            break;
+
+        case scs_type_disp_bin:
+            struct scs_disp_bin *disp = (struct scs_disp_bin *)(cmd);
+            void (*prog_entry)() = (void (*)())(chip_state.prog_buf + disp->entry_buf_offset);
+
+            (*prog_entry)();
+            break;
+        }
+    }
+}
+
 int main() {
     stdio_init_all();
 
-    // watchdog_enable(2000, 1);
+    watchdog_enable(2000, 1);
 
-    // if (watchdog_caused_reboot()) {
-    //     shader_stall();
-    // }
-
-    // enable serial device on host by sending traffic
-    printf("Hello, world!\n");
-    sleep_ms(100);
-
-    stdio_set_translate_crlf(&stdio_usb, false);
-
-    struct gcs_begin b = {
-        .type = gcs_type_begin,
-        .fb_extent = {128, 128},
-        .view_transform = {{128.f / 2, 0 + 128.f / 2}, {128.f / 2, 0 + 128.f / 2}, {1.f, 0.f}},
-    };
-
-    enter_graphics_state(&b);
-    return 0;
-
-    struct gcs_ready p = {
-        gcs_type_ready,
-    };
-
-    while (true) {
-        uint8_t buf[MAX_GCS_PACKET_SIZE];
-        *(uint16_t *)&buf[0] = sizeof(struct gcs_ready);
-        memcpy(buf + sizeof(uint16_t), &p, sizeof(struct gcs_ready));
-
-        fwrite(&buf, sizeof(uint16_t) + sizeof(struct gcs_ready), 1, stdout);
-        fflush(stdout);
-        sleep_ms(500);
+    if (watchdog_caused_reboot()) {
+        shader_stall();
     }
 
-    chip_state = cs_idle;
+    // enable serial device on host by sending traffic
+    // printf("Hello, world!\n");
+    // sleep_ms(100);
+
+    // struct gcs_begin b = {
+    //     .type = gcs_type_begin,
+    //     .fb_extent = {128, 128},
+    //     .view_transform = {{128.f / 2, 0 + 128.f / 2}, {128.f / 2, 0 + 128.f / 2}, {1.f, 0.f}},
+    // };
+
+    // enter_graphics_state(&b);
+
+    // enter test mode
+    // start_mock_broker();
+
+    start_single_chip_scs();
 }

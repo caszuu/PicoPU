@@ -3,6 +3,9 @@
 #include "common/picopu_types.h"
 #include "graphics_state.h"
 
+#include <usbd/hostbus_driver.h>
+#include "chip_state.h"
+
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
@@ -20,7 +23,7 @@
         sizeof(struct color_tile) * tile_count +                  \
         sizeof(struct depth_tile) * tile_count
 
-struct gcs_fo_header fo_header = {gcs_type_fo, 0, 0};
+struct gcs_fo_header fo_header;
 uint8_t mask_buf[((MAX_INLINE_TILES / 2) + (MAX_INLINE_TILES % 2))];
 struct color_tile ct_buf[MAX_INLINE_TILES];
 struct depth_tile dt_buf[MAX_INLINE_TILES];
@@ -36,21 +39,17 @@ void stream_fragment_output() {
     if (fo_header.tile_count != 0) {
         uint16_t p_size = fo_buf_size(fo_header.tile_count);
 
-        put_buffer(&p_size, sizeof(uint16_t));
-        put_buffer(&fo_header, sizeof(struct gcs_fo_header));
+        hostbus_xfer_out(&fo_header, sizeof(fo_header));
 
-        put_buffer(mask_buf, sizeof(uint8_t) * ((fo_header.tile_count / 2) + (fo_header.tile_count % 2)));
-        put_buffer(ct_buf, sizeof(struct color_tile) * fo_header.tile_count);
-        put_buffer(dt_buf, sizeof(struct depth_tile) * fo_header.tile_count);
-
-        stdio_flush();
+        hostbus_xfer_out(mask_buf, sizeof(uint8_t) * ((fo_header.tile_count / 2) + (fo_header.tile_count % 2)));
+        hostbus_xfer_out(ct_buf, sizeof(struct color_tile) * fo_header.tile_count);
+        hostbus_xfer_out(dt_buf, sizeof(struct depth_tile) * fo_header.tile_count);
 
         reset_fragment_output();
     }
 }
 
-void exec_fragment_stage(u16_x2_simd p, int32_t ws[12], int16_t area,
-                         uint8_t cv_mask) {
+void exec_fragment_stage(v2i32 p, v4i32 ws[3], int32_t area, uint8_t cv_mask) {
     // select depth
 
     // patch_ds_tile(&dt); // only if no gl_FragDepth writes
@@ -72,10 +71,10 @@ void exec_fragment_stage(u16_x2_simd p, int32_t ws[12], int16_t area,
     }; */
 
     struct color_tile ct = {
-        (struct rgba_color){ws[0 + 0] / (area / 256), ws[0 + 1] / (area / 256), ws[0 + 2] / (area / 256), 255},
-        (struct rgba_color){ws[3 + 0] / (area / 256), ws[3 + 1] / (area / 256), ws[3 + 2] / (area / 256), 255},
-        (struct rgba_color){ws[6 + 0] / (area / 256), ws[6 + 1] / (area / 256), ws[6 + 2] / (area / 256), 255},
-        (struct rgba_color){ws[9 + 0] / (area / 256), ws[9 + 1] / (area / 256), ws[9 + 2] / (area / 256), 255},
+        (struct rgba_color){ws[0][0] / (area / 256), ws[1][0] / (area / 256), ws[2][0] / (area / 256), 255},
+        (struct rgba_color){ws[0][1] / (area / 256), ws[1][1] / (area / 256), ws[2][1] / (area / 256), 255},
+        (struct rgba_color){ws[0][2] / (area / 256), ws[1][2] / (area / 256), ws[2][2] / (area / 256), 255},
+        (struct rgba_color){ws[0][3] / (area / 256), ws[1][3] / (area / 256), ws[2][3] / (area / 256), 255},
     };
 
     /* struct color_tile ct = {
@@ -91,8 +90,8 @@ void exec_fragment_stage(u16_x2_simd p, int32_t ws[12], int16_t area,
     if (fo_header.tile_count == 0) {
         // calc the pixel index of the first tile
 
-        fo_header.fb_index_base = (p.v[0] / 2) * 4 + (p.v[1] / 2 * 2) * fb_extent[0] /* tile index */;
-        //                        (p.v[0] % 2) + (p.v[1] % 2) * 2 /* tile offset */;
+        fo_header.fb_index_base = (p[0] / 2) * 4 + (p[1] / 2 * 2) * ((struct gcs_state *)chip_state.cbuf)->fb_extent[0] /* tile index */;
+        //                        (p[0] % 2) + (p[1] % 2) * 2 /* tile offset */;
     }
 
     mask_buf[fo_header.tile_count / 2] |= cv_mask << (4 * (fo_header.tile_count % 2));
@@ -114,13 +113,13 @@ void exec_fragment_stage(u16_x2_simd p, int32_t ws[12], int16_t area,
 #define po_buf_size(vert_count)                  \
     sizeof(struct gcs_po_header) +               \
         sizeof(struct clip_point) * vert_count + \
-        output_vertex_stride *vert_count
+        /*FIXME: output_vertex_stride*/ vert_count
 
 struct clip_point clip_buf[sizeof(struct clip_point) * MAX_VERTICES_PER_STREAM];
 uint8_t vertex_out_buf[MAX_VERTEX_OUTPUT_STRIDE * MAX_VERTICES_PER_STREAM];
 
 bool exec_vertex_stage(struct gcs_vs_header *stream, void *in_buf) {
-    static const uint8_t v_count = 3; // compile-time const
+    static const uint8_t v_count = 3;
 
     // local: vertex index in this vertex stream; global: vertex index in the entire draw command
     uint8_t local_vertex_index = 0;
@@ -129,7 +128,7 @@ bool exec_vertex_stage(struct gcs_vs_header *stream, void *in_buf) {
     uint8_t output_primitive_count = stream->primitive_count;
 
     // accumulated shading_area between all prims
-    rast_int_t shading_area[4] = {0, 0, fb_extent[0], fb_extent[1]};
+    rast_int_t shading_area[4] = {0, 0, ((struct gcs_state *)chip_state.cbuf)->fb_extent[0], ((struct gcs_state *)chip_state.cbuf)->fb_extent[1]};
 
     for (uint8_t prim_i = 0; prim_i < stream->primitive_count; (local_vertex_index += v_count, prim_i++)) {
         /* vertex stage */
@@ -150,9 +149,9 @@ bool exec_vertex_stage(struct gcs_vs_header *stream, void *in_buf) {
             v_positions[pvi][2] = in_pos[2];
             v_positions[pvi][3] = 1.f;
 
-            format_dbg("shader vertex %f, %f, %f", v_positions[pvi][0], v_positions[pvi][1], v_positions[pvi][2]);
+            format_dbg("shader vertex %f, %f, %f\n\r", v_positions[pvi][0], v_positions[pvi][1], v_positions[pvi][2]);
 
-            vertex_out_buf[(local_vertex_index + pvi) * output_vertex_stride] = in_pos[0];
+            // FIXME: vertex_out_buf[(local_vertex_index + pvi) * output_vertex_stride] = in_pos[0];
 
             // post-shader
 
@@ -180,7 +179,7 @@ bool exec_vertex_stage(struct gcs_vs_header *stream, void *in_buf) {
         }
 
         if (gb_out_codes) {
-            // prim both outside the guard-bands and inside viewport, very rare, slow clip
+            // prim both outside the guard-bands and inside viewport, very rare, perform slow clip
 
             format_dbg("FIXME: unimplemented guard-band clipping reached, culling instead!");
 
@@ -207,9 +206,9 @@ bool exec_vertex_stage(struct gcs_vs_header *stream, void *in_buf) {
             struct clip_point *clip = &clip_buf[local_vertex_index + pvi];
 
             *clip = (struct clip_point){
-                .x = v_positions[pvi][0] * view_transform_params[0][0] + view_transform_params[0][1],
-                .y = v_positions[pvi][1] * view_transform_params[1][0] + view_transform_params[1][1],
-                .d = v_positions[pvi][2] * view_transform_params[2][0] + view_transform_params[2][1],
+                .x = v_positions[pvi][0] * ((struct gcs_state *)chip_state.cbuf)->view_transform_params[0][0] + ((struct gcs_state *)chip_state.cbuf)->view_transform_params[0][1],
+                .y = v_positions[pvi][1] * ((struct gcs_state *)chip_state.cbuf)->view_transform_params[1][0] + ((struct gcs_state *)chip_state.cbuf)->view_transform_params[1][1],
+                .d = v_positions[pvi][2] * ((struct gcs_state *)chip_state.cbuf)->view_transform_params[2][0] + ((struct gcs_state *)chip_state.cbuf)->view_transform_params[2][1],
             };
 
             // min/max the shading area
@@ -233,7 +232,7 @@ bool exec_vertex_stage(struct gcs_vs_header *stream, void *in_buf) {
     const uint16_t output_vertex_count = local_vertex_index;
 
     struct gcs_po_header p = {gcs_type_po, output_primitive_count};
-    uint16_t p_size = po_buf_size(output_vertex_count);
+    uint16_t p_size = po_buf_size(output_vertex_count * 0);
 
     memcpy(&p.shading_area, shading_area, sizeof(p.shading_area));
 
@@ -241,7 +240,7 @@ bool exec_vertex_stage(struct gcs_vs_header *stream, void *in_buf) {
     put_buffer(&p, sizeof(p));
 
     put_buffer(clip_buf, sizeof(struct clip_point) * output_vertex_count);
-    put_buffer(vertex_out_buf, output_vertex_stride * output_vertex_count);
+    // FIXME: (also fix count) put_buffer(vertex_out_buf, output_vertex_stride * output_vertex_count);
 
     stdio_flush();
 }

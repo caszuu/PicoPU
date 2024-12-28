@@ -3,7 +3,6 @@
 add_executable(shader_firmware
     chip_state.c
     
-    graphics_state.c
     raster_stage.c
     vertex_stage.c
 
@@ -18,7 +17,7 @@ pico_set_program_version(shader_firmware "0.1")
 
 # Modify the below lines to enable/disable output over UART/USB
 pico_enable_stdio_uart(shader_firmware 0)
-pico_enable_stdio_usb(shader_firmware 1)
+pico_enable_stdio_usb(shader_firmware 0)
 
 # Add the standard library to the build
 target_link_libraries(shader_firmware
@@ -32,12 +31,30 @@ target_include_directories(shader_firmware PRIVATE
 
 # Add any user requested libraries
 target_link_libraries(shader_firmware 
-        hardware_dma
-        hardware_pio
-        hardware_interp
-        hardware_watchdog
-        hardware_clocks
-        )
+    hardware_dma
+    hardware_pio
+    hardware_interp
+    hardware_watchdog
+    hardware_clocks
+)
+
+if (PICOPU_SINGLE_CHIP)
+    target_sources(shader_firmware PRIVATE
+        single_chip.c
+        ../usbd/usb_descriptors.c
+        ../usbd/hostbus_driver.c
+    )
+
+    target_include_directories(shader_firmware PUBLIC
+        ${CMAKE_CURRENT_LIST_DIR}/../usbd # specifically for 'tusb_config.h'
+    )
+    
+    target_link_libraries(shader_firmware
+        pico_unique_id
+        tinyusb_device
+        tinyusb_board
+    )
+endif()
 
 pico_add_extra_outputs(shader_firmware)
 

@@ -2,51 +2,15 @@
 
 #include <stdint.h>
 
-// explicit simd types: **undefined** behaviour on overflow
-//   or other operations then additions, substractions and bitwise
-//   note: bit-shifts might also be possible with explicit masking
 
-// basic usage: use .v[] for value access (copy in/out) and .o for operations on the simd lane as a whole
-//              see raster_stage.c for example usage
+typedef int32_t v2i32 __attribute__((vector_size(8)));
+typedef uint32_t v2u32 __attribute__((vector_size(8)));
 
-typedef union {
-    uint8_t v[4];
-    uint32_t o;
-} u8_x4_simd;
+typedef int32_t v4i32 __attribute__((vector_size(16)));
+typedef uint32_t v4u32 __attribute__((vector_size(16)));
 
-typedef union {
-    uint8_t v[2];
-    uint16_t o;
-} u8_x2_simd;
+typedef int16_t v2i16 __attribute__((vector_size(4)));
+typedef uint16_t v2u16 __attribute__((vector_size(4)));
 
-typedef union {
-    uint16_t v[4];
-    uint64_t o;
-} u16_x4_simd;
-
-typedef union {
-    uint16_t v[2];
-    uint32_t o;
-} u16_x2_simd;
-
-// signed variants, same constrains apply, *only* add, sub, bitwise ops, no overflow or underflow
-
-/* typedef union {
-    int8_t v[4];
-    uint32_t o;
-} i8_x4_simd;
-
-typedef union {
-    int8_t v[2];
-    uint16_t o;
-} i8_x2_simd;
-
-typedef union {
-    int16_t v[4];
-    uint64_t o;
-} i16_x4_simd;
-
-typedef union {
-    int16_t v[2];
-    uint32_t o;
-} i16_x2_simd; */
+typedef int16_t v4i16 __attribute__((vector_size(8)));
+typedef uint16_t v4u16 __attribute__((vector_size(8)));
