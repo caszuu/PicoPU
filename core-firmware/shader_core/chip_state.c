@@ -1,10 +1,14 @@
-#include "../common/cluster_bus.h"
 #include "graphics_state.h"
 
 #include "chip_state.h"
+#include <usbd/hostbus_driver.h>
 
-#include "hardware/watchdog.h"
-#include "pico/stdlib.h"
+#include <hardware/watchdog.h>
+#include <hardware/clocks.h>
+#include <pico/stdlib.h>
+#include <pico/bootrom.h>
+
+#include <common/instru.h>
 
 #include <stdbool.h>
 #include <stdio.h>
@@ -29,58 +33,62 @@ void shader_stall() {
     }
 }
 
-static enum scs_cmd_type *await_scs();
+void enter_gcs(void* cmd_buf) {
+    enum gcs_types *p = (enum gcs_types *)cmd_buf;
 
-static void enter_scs() {
+    if (*p == gcs_type_fs) {
+        process_fragment_stream(p);
+    } else if (*p == gcs_type_vs) {
+        process_vertex_stream(p);
+    } else {
+        assert(false);
+    }
+}
+
+void enter_scs(void* cmd) {
     // start listening on scs commands
 
-    while (true) {
-        enum scs_cmd_type *cmd = 0; // await_scs();
+    switch (*(enum scs_cmd_type *)(cmd)) {
+    case scs_type_ld_cbuf:
+        struct scs_ld_cbuf *ld = (struct scs_ld_cbuf *)(cmd);
+        memcpy(chip_state.cbuf + ld->range_offset, (void *)(ld + 1), ld->range_size);
+        break;
 
-        switch (*cmd) {
-        case scs_type_ld_cbuf:
-            struct scs_ld_cbuf *ld = (struct scs_ld_cbuf *)(cmd);
-            memcpy(chip_state.cbuf + ld->range_offset, (void *)(ld + 1), ld->range_size);
-            break;
+    case scs_type_ld_bin:
+        struct scs_ld_bin *ldb = (struct scs_ld_bin *)(cmd);
+        memcpy(chip_state.prog_buf + ldb->bin_buf_offset, (void *)(ld + 1), ldb->bin_size);
+        break;
 
-        case scs_type_ld_bin:
-            struct scs_ld_bin *ldb = (struct scs_ld_bin *)(cmd);
-            memcpy(chip_state.prog_buf + ldb->bin_buf_offset, (void *)(ld + 1), ldb->bin_size);
-            break;
+    case scs_type_disp_bin:
+        struct scs_disp_bin *disp = (struct scs_disp_bin *)(cmd);
+        void (*prog_entry)() = (void (*)())(chip_state.prog_buf + disp->entry_buf_offset);
+        (*prog_entry)();
+        break;
 
-        case scs_type_disp_bin:
-            struct scs_disp_bin *disp = (struct scs_disp_bin *)(cmd);
-            void (*prog_entry)() = (void (*)())(chip_state.prog_buf + disp->entry_buf_offset);
+    case scs_type_disp_gcs:
+        enter_gcs(cmd + 4);
+        break;
 
-            (*prog_entry)();
-            break;
-        }
+    case scs_type_flash:
+        rom_reboot(0x102 /*REBOOT_TYPE_BOOTSEL | NO_RETURN_ON_SUCCESS*/, 1, 0, 0); // note: delay_ms must be non-zero to work
+        break;
     }
 }
 
 int main() {
     stdio_init_all();
 
-    watchdog_enable(2000, 1);
-
-    if (watchdog_caused_reboot()) {
+    if (watchdog_enable_caused_reboot()) {
         shader_stall();
     }
 
-    // enable serial device on host by sending traffic
-    // printf("Hello, world!\n");
-    // sleep_ms(100);
+    // watchdog_enable(2000, 1);
+    watchdog_enable(10000, 1);
 
-    // struct gcs_begin b = {
-    //     .type = gcs_type_begin,
-    //     .fb_extent = {128, 128},
-    //     .view_transform = {{128.f / 2, 0 + 128.f / 2}, {128.f / 2, 0 + 128.f / 2}, {1.f, 0.f}},
-    // };
+    instru_init();
 
-    // enter_graphics_state(&b);
-
-    // enter test mode
-    // start_mock_broker();
+    // test oc
+    // set_sys_clock_khz(315000, true);
 
     start_single_chip_scs();
 }

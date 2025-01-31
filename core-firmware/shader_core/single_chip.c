@@ -24,22 +24,6 @@
 // while operationg the shader core firmware on a single core
 // the other core is in a simplified broker-like mode that communicates with the host usb driver
 
-void enter_scs();
-
-void enter_gcs(void* cmd_buf) {
-    struct gcs_fs_header *p = (struct gcs_fs_header *)cmd_buf;
-    struct gcs_state *gs = (struct gcs_state *)chip_state.cbuf;
-
-    hostbus_xfer_out(p, 13);
-
-    assert(p->type == gcs_type_fs);
-    gs->rasterizer_mode = e_prim_trig;
-    gs->fb_extent[0] = 128;
-    gs->fb_extent[1] = 128;
-
-    process_fragment_stream(p);
-}
-
 void start_single_chip_scs() {
     // wait for host listener
 
@@ -65,18 +49,16 @@ void start_single_chip_scs() {
 
     // start SU top-level loop
 
-    static bool t = true;
+    bool t = true;
 
+    uint8_t scs_buf[16 * 1024];
     while (true) {
-        if (hostbus_device.enter_scs) {
+        hostbus_xfer_in_blocking(scs_buf, 16 * 1024);
+
             gpio_put(PICO_DEFAULT_LED_PIN, t);
             t = !t;
             
-            // enter_scs();
-            enter_gcs(hostbus_device.scs_cmd_buf);
-
-            hostbus_device.enter_scs = false;
-        }
+        enter_scs(scs_buf);
 
         tud_task();
         watchdog_update();

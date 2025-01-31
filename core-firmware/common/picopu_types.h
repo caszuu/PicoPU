@@ -24,7 +24,7 @@ enum primitive_mode {
 };
 typedef enum primitive_mode primitive_mode_t;
 
-typedef int32_t rast_int_t;
+/* typedef int32_t rast_int_t;
 #define GUARD_BAND_MIN (-32768)
 #define GUARD_BAND_MAX (32767)
 
@@ -32,4 +32,4 @@ typedef int32_t rast_int_t;
 struct clip_point {
     rast_int_t x, y;
     depth_t d;
-};
+}; */

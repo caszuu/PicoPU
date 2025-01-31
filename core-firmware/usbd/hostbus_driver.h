@@ -26,21 +26,27 @@ struct hostbus_config_descriptor /* TUSB_ATTR_PACKED */ {
         .bInterval = _interval,                               \
     }
 
-enum hostbus_link_state {
-    e_hb_idle = 0,
-    e_hb_mid_xfer_up_header,
-    e_hb_mid_xfer_up_data,
+// out xfer fifo buf
+struct hb_xfer {
+    uint16_t xfer_offset;
+    uint16_t xfer_size;
 };
 
 struct hostbus_device_state {
-    enum hostbus_link_state state;
+    // used for blocking in xfers, 0 until in xfer is complete
+    uint16_t in_xfer_bytes;
 
-    volatile bool enter_scs;
-    uint8_t scs_cmd_buf[1024];
+    struct hb_xfer out_xfer_buf[128];
+    uint16_t out_xfer_buffered;
+    uint16_t out_xfer_sent;
 };
 
-extern struct hostbus_device_state hostbus_device;
+extern struct hostbus_device_state hb_dev;
 
+// blocks for a in hb packet, returns true number of bytes read
+uint16_t hostbus_xfer_in_blocking(void* buf, uint16_t max_bytes);
+
+// puts a hb packet on the out endpoint, may block, buffer can be deleted after return
 void hostbus_xfer_out(void* buf, uint16_t size);
 
 /* hostbus protocol impl */
