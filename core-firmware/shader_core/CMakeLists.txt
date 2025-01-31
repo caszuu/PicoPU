@@ -3,10 +3,8 @@
 add_executable(shader_firmware
     chip_state.c
     
-    raster_stage.c
-    vertex_stage.c
-
-    test_def.c
+    gcs/raster_stage.c
+    gcs/vertex_stage.c
 )
 
 pico_set_program_name(shader_firmware "shader_firmware")
@@ -36,6 +34,8 @@ target_link_libraries(shader_firmware
     hardware_interp
     hardware_watchdog
     hardware_clocks
+
+    pico_bootrom
 )
 
 if (PICOPU_SINGLE_CHIP)

@@ -4,15 +4,24 @@ import usb.util
 import struct
 import math
 import time
-import random
+import argparse
+import sys
 
 print("initializing pyhost driver...")
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--flash", action="store_true", dest="reboot_flash", help="Reboots a PicoPU device into BOOTSEL mode to be flashed with firmware and exit.")
+
+args = parser.parse_args()
 
 # == init device ==
 
 dev = usb.core.find(idVendor=0xcafe, idProduct=0x4000)
 
 if dev is None:
+    if args.reboot_flash:
+        sys.exit() # device might already be in BOOTSEL mode
+
     raise ValueError("no PicoPU device found!")
 
 dev.set_configuration()
@@ -23,23 +32,21 @@ sync_int = itf[0]
 trans_up = itf[1]
 trans_down = itf[2]
 
+def scs_write(data: bytes) -> None:
+    trans_up.write(data)
+
+def scs_read(size: int) -> bytes:
+    return trans_down.read(size, 500).tobytes()
+
 print(f"using device: {"picopu"} at bus: {dev.bus} addr: {dev.address}")
 print("driver init done!\n")
 
 # == picopu structs ==
 
-class HostbusHeaders:
-    # struct formats for packing hostbus packet headers
-
-    XFER = '<BII'
-    @staticmethod
-    def pack_xfer(dev_addr: int, data: bytes) -> bytes:
-        return struct.pack(HostbusHeaders.XFER, 1, len(data), dev_addr) + data
-
-    SCS_PROC = '<B'
-    @staticmethod
-    def pack_sps_proc() -> bytes:
-        return struct.pack(HostbusHeaders.SCS_PROC, 2)
+systick_avg = 0.
+systick_count = 0
+systick_min = 2 ** 24
+systick_max = 0
 
 class SCSHeaders:
     LD_CBUF = '<BHH'
@@ -57,123 +64,76 @@ class SCSHeaders:
     def pack_disp_bin(entry_offset: int) -> bytes:
         return struct.pack(SCSHeaders.DISP_BIN, 3, entry_offset)
 
+    DISP_GCS = '<BBBB' # 3 padding bytes
+    @staticmethod
+    def pack_disp_gcs() -> bytes:
+        return struct.pack(SCSHeaders.DISP_GCS, 4, 0, 0, 0)
+
+    FLASH = '<B'
+    @staticmethod
+    def pack_flash() -> bytes:
+        return struct.pack(SCSHeaders.FLASH, 5)
+
 class GCSHeaders:
-    FS = '<BHHHHB'
+    VS = '<BBHI' # 1 padding short
     @staticmethod
-    def pack_fs(shade_range: tuple[int, int, int, int], prims: list[bytes]) -> bytes:
-        return struct.pack(GCSHeaders.FS, 2, *shade_range, len(prims) // 3) + b''.join(prims)
+    def pack_vs(base_vertex: int, prim_count: int, vert_data: bytes) -> bytes:
+        return struct.pack(GCSHeaders.VS, 0, prim_count, 0, base_vertex) + vert_data
 
-    COL_TILE_SIZE = 4 * 4
-    D_TILE_SIZE = 4 * 4
-
-    FO = '<BBI'
+    FS = '<BBHHHHH' # 1 padding short
     @staticmethod
-    def unpack_fo(data: bytes) -> tuple[int, int, int]:
-        _, tile_count, fb_base_index = struct.unpack(GCSHeaders.FO, data)
+    def pack_fs(shade_range: tuple[int, int, int, int], prim_count: int, clip_buf: bytes) -> bytes:
+        return struct.pack(GCSHeaders.FS, 1, prim_count, *shade_range, 0) + clip_buf
+
+    COL_TILE_SIZE = 16 * 4
+    D_TILE_SIZE =  16 * 4
+
+    PO = '<BBiiii'
+    @staticmethod
+    def unpack_po(data: bytes) -> tuple[int, tuple[int, int, int, int]]:
+        elems = struct.unpack(GCSHeaders.PO, data)
+
+        return (elems[1], elems[2:6])
+
+    FO = '<BBHH'
+    FO_INS = '<BBHHI'
+    @staticmethod
+    def unpack_fo(data: bytes) -> tuple[int, int, int, int]:
+        if not False:
+            _, tile_count, fb_base_x, fb_base_y = struct.unpack(GCSHeaders.FO, data)
+        else:
+            pass
+            _, tile_count, fb_base_x, fb_base_y, systick_sample = struct.unpack(GCSHeaders.FO_INS, data)
+            systick_sample = (2 ** 24) - systick_sample # systick is counting down from 0x00ffffff to 0x0
+        
+            global systick_avg, systick_count, systick_min, systick_max
+            systick_avg = (systick_avg * systick_count + systick_sample) / (systick_count + 1)
+            systick_min = min(systick_min, systick_sample)
+            systick_max = max(systick_max, systick_sample)
+            systick_count += 1
+            
+            print(systick_sample, systick_min, systick_max, systick_avg)
+
         to_read = math.ceil(tile_count / 2) + tile_count * GCSHeaders.COL_TILE_SIZE + tile_count * GCSHeaders.D_TILE_SIZE
-
-        return (tile_count, fb_base_index, to_read)
-
-    @staticmethod
-    def unpack_fo_bufs(data: bytes) -> tuple[bytes, bytes, bytes]:
-        cv_buf = data[:math.ceil(tile_count / 2)]
-        col_buf = data[len(cv_buf):tile_count * GCSHeaders.COL_TILE_SIZE]
-        d_buf = data[len(cv_buf) + len(col_buf):]
-
-        return (cv_buf, col_buf, d_buf)
+        return (tile_count, fb_base_x, fb_base_y, to_read)
 
     READY = '<B'
     @staticmethod
     def is_ready(data: bytes) -> bool:
         return data[0:1] == int(16).to_bytes(1, 'little', signed=False)
 
-# == test fb preview ==
+    GCS_STATE = '<HHffffffB'
+    @staticmethod
+    def pack_gs(extent: tuple[int, int]) -> bytes:
+        offset = (0, 0)
+        viewport_transform = (extent[0] / 2, offset[0] + extent[0] / 2, extent[1] / 2, offset[1] + extent[1] / 2, 1, 0)
 
-FB_RES = 128
+        return struct.pack(GCSHeaders.GCS_STATE, *extent, *viewport_transform, 3)
 
-import pygame as pg
+# == pyhost modes ==
 
-pg.init()
-fb = pg.display.set_mode((FB_RES, FB_RES), vsync=False)
-# fb = pg.Surface((FB_RES, FB_RES))
+if args.reboot_flash:
+    trans_up.write(SCSHeaders.pack_flash())
+    time.sleep(.5) # wait for firmware to reboot
 
-def patch_fb(tile_count: int, fb_base_index: int, cv_buf: bytes, col_data: bytes) -> None:
-    for i in range(tile_count):
-        col_tile = col_data[i * GCSHeaders.COL_TILE_SIZE:(i + 1) * GCSHeaders.COL_TILE_SIZE]
-        x, y = (((fb_base_index + i*4) // 4 * 2) % FB_RES, ((fb_base_index + i*4) // 4 * 2) // FB_RES * 2)
-
-        cv = cv_buf[i // 2] >> (i % 2 * 4)
-
-        if cv & 1:
-            fb.set_at((x, y), col_tile[0:3])
-        if cv & 2:
-            fb.set_at((x + 1, y), col_tile[4:7])
-        if cv & 4:
-            fb.set_at((x, y + 1), col_tile[8:11])
-        if cv & 8:
-            fb.set_at((x + 1, y + 1), col_tile[12:15])
-
-    pg.display.update()
-
-i = 0
-def save_fb() -> None:
-    global i
-    pg.image.save(fb, f"fbs/fb_col{i}.png")
-    i += 1
-
-# == test driver ==
-
-clip_fmt = '<iif'
-
-def dispatch_frame():
-    prims_buf = []
-
-    for i in range(16):
-        test_prims = [
-            struct.pack(clip_fmt, random.randint(0, FB_RES - 1), random.randint(0, FB_RES // 2), 0),
-            struct.pack(clip_fmt, random.randint(0, FB_RES // 2), random.randint(FB_RES // 2, FB_RES - 1), 0),
-            struct.pack(clip_fmt, random.randint(FB_RES // 2, FB_RES - 1), random.randint(FB_RES // 2, FB_RES - 1), float('inf')),
-        ]
-        prims_buf.extend(test_prims)
-    
-    # dispatch a test gcs fragment stream
-    d = HostbusHeaders.pack_xfer(0x00, GCSHeaders.pack_fs((0, 0, FB_RES - 1, FB_RES - 1), prims_buf))
-
-    start_time = time.perf_counter()
-
-    # trans_up.write(d[0:1])
-    trans_up.write(d[0:1])
-    trans_up.write(d[1:9])
-    trans_up.write(d[9:])
-
-    trans_up.write(HostbusHeaders.pack_sps_proc())
-
-    print(trans_down.read(13, 5000).tobytes().hex())
-    # print(trans_down.read(8, 5000).tobytes().hex())
-
-    # await fragment output streams and ready gcs cmds
-    while True:
-        p_head = trans_down.read(6, 5000).tobytes()
-
-        if GCSHeaders.is_ready(p_head):
-            break
-
-        # read frag output stream
-        tile_count, fb_base_index, to_read = GCSHeaders.unpack_fo(p_head)
-
-        cv_buf = trans_down.read(math.ceil(tile_count / 2))
-        col_buf = trans_down.read(tile_count * GCSHeaders.COL_TILE_SIZE)
-        d_buf = trans_down.read(tile_count * GCSHeaders.D_TILE_SIZE)
-
-        patch_fb(tile_count, fb_base_index, cv_buf, col_buf)
-
-    fin_time = time.perf_counter()
-    print(f"gcs ready received! frame time: {fin_time - start_time}s")
-
-    # save_fb()
-
-while True:
-    # fb.fill((0, 0, 0))
-    dispatch_frame()
-
-    pg.display.update()
+    sys.exit()

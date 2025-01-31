@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../common/cluster_bus.h"
-#include "../common/ex_simd.h"
-#include "../common/picopu_types.h"
+#include <common/gcs_proto.h>
+#include <common/ex_simd.h>
+#include <common/picopu_types.h>
 
 #include "pico/stdio.h"
 #include <stdio.h>
@@ -12,22 +12,9 @@
 #include <string.h>
 
 #define MAX_VERTEX_OUTPUT_STRIDE 24
-#define MAX_VERTICES_PER_STREAM 32
 
 #define MAX_CONSTANT_BUFFER_SIZE 65536
 #define MAX_BOUND_SAMPLERS 8
-
-/* gcs state */
-
-struct gcs_state {
-    screen_axis_t fb_extent[2];
-    float view_transform_params[3][2];
-
-    // struct gcs_sampler_state samplers[MAX_BOUND_SAMPLERS];
-
-    primitive_mode_t rasterizer_mode;
-    uint8_t rast_verts_per_prim[2];
-};
 
 /* helper global funcs */
 
@@ -57,15 +44,5 @@ void send_dbg(struct gcs_dbg *p);
 
 /* fixed-function entry points */
 
-// void bind_pipeline(struct gcs_gp_bind_header *gp);
-// void configure_pipeline(struct gcs_gp_conf *conf);
 void process_vertex_stream(struct gcs_vs_header *stream);
 void process_fragment_stream(struct gcs_fs_header *stream);
-
-void enter_graphics_state();
-
-/* single chip test more */
-
-// starts a mock broker infinitely dispatching test frame draws
-// this is used to test shader firmware with a single chip
-void start_mock_broker();

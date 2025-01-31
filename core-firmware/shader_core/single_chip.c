@@ -8,7 +8,7 @@
 #include <tusb.h>
 
 #include <usbd/hostbus_driver.h>
-#include <common/cluster_bus.h>
+#include <common/gcs_proto.h>
 #include <common/picopu_types.h>
 
 #include <pico.h>
@@ -55,9 +55,9 @@ void start_single_chip_scs() {
     while (true) {
         hostbus_xfer_in_blocking(scs_buf, 16 * 1024);
 
-            gpio_put(PICO_DEFAULT_LED_PIN, t);
-            t = !t;
-            
+        gpio_put(PICO_DEFAULT_LED_PIN, t);
+        t = !t;
+
         enter_scs(scs_buf);
 
         tud_task();
