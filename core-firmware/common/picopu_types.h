@@ -16,14 +16,6 @@ struct rgba_color {
 
 typedef float depth_t;
 
-enum primitive_mode {
-    e_prim_null = 0,
-    e_prim_point,
-    e_prim_line,
-    e_prim_trig,
-};
-typedef enum primitive_mode primitive_mode_t;
-
 /* typedef int32_t rast_int_t;
 #define GUARD_BAND_MIN (-32768)
 #define GUARD_BAND_MAX (32767)

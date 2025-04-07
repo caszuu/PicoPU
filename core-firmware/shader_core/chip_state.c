@@ -25,27 +25,34 @@ void shader_stall() {
 
     watchdog_disable();
 
-    while (true) {
+    for (uint32_t i = 0; i < 3; i++) {
         gpio_put(PICO_DEFAULT_LED_PIN, 1);
         sleep_ms(500);
         gpio_put(PICO_DEFAULT_LED_PIN, 0);
         sleep_ms(500);
     }
+
+    rom_reboot(0x102 /*REBOOT_TYPE_BOOTSEL | NO_RETURN_ON_SUCCESS*/, 1, 0, 0); // note: delay_ms must be non-zero to work
 }
 
-void enter_gcs(void* cmd_buf) {
+void dispatch_vertex_stage(struct gcs_assign_batch *batch);
+void dispatch_raster_stage();
+
+void enter_gcs(void *cmd_buf) {
     enum gcs_types *p = (enum gcs_types *)cmd_buf;
 
-    if (*p == gcs_type_fs) {
-        process_fragment_stream(p);
-    } else if (*p == gcs_type_vs) {
-        process_vertex_stream(p);
+    if (*p == gcs_type_assign) {
+        dispatch_vertex_stage(p);
+        dispatch_raster_stage();
+
+        struct gcs_batch_finished p = {gcs_type_finished};
+        hostbus_xfer_out(&p, sizeof(p));
     } else {
         assert(false);
     }
 }
 
-void enter_scs(void* cmd) {
+void enter_scs(void *cmd) {
     // start listening on scs commands
 
     switch (*(enum scs_cmd_type *)(cmd)) {

@@ -1,4 +1,4 @@
-from hostd import GCSHeaders, SCSHeaders, scs_read, scs_write
+from hostd import GCSHeaders, SCSHeaders, _dev_read, _dev_write
 
 import os
 import time
@@ -14,8 +14,10 @@ try:
 except ImportError:
     import glm
 
-DEBUG_WINDOW = True
-fb_res = (640, 480)
+DEBUG_WINDOW = False
+DEBUG_CPU_WIREFRAME = False
+fb_res = (640, 380)
+# fb_res = (120, 100)
 
 pg.init()
 
@@ -46,7 +48,7 @@ os.makedirs("fbs/", exist_ok=True)
 fb_save_index = 0
 def save_fb() -> None:
     global fb_save_index
-    pg.image.save(fb, f"fbs/fb_col{fb_save_index}.png")
+    pg.image.save(fb, f"fbs/fb_col{fb_save_index:0=3}.png")
     fb_save_index += 1
 
 # == test driver ==
@@ -57,7 +59,48 @@ clip_fmt = '<iif'
 bytes_written = 0
 bytes_read = 0
 
-ctime = 0
+ctime = 1
+
+m_vbuf = []
+m_fbuf = []
+
+def load_model(path = "bunny.obj"):
+    with open(path, 'r') as f:
+        for l in f.readlines():
+            if l.startswith("v "):
+                # parse vertex
+                l = l[2:].strip()
+                axis = l.split(" ")
+
+                m_vbuf.append(glm.vec3(float(axis[0]), float(axis[1]), float(axis[2])))
+
+            elif l.startswith("f "):
+                # parse face
+                l = l[2:].strip()
+                indices = l.split(" ")
+
+                m_fbuf.append((int(indices[0].split("//")[0]) - 1, int(indices[1].split("//")[0]) - 1, int(indices[2].split("//")[0]) - 1))
+    
+    print(f"loaded model verts: {len(m_vbuf)} faces: {len(m_fbuf)}")
+
+load_model()
+
+def cpu_vert_stage(vert_array: list[glm.vec3]) -> list[bytes]:
+    # rotate vertices on cpu side (for now) to animate the verts
+    clip_space_verts = []
+    for v in vert_array:
+        clip_space_verts.append(glm.rotateY(glm.rotateX(v * glm.vec3(.5), glm.radians(45)), ctime / 5))
+
+    return clip_space_verts
+
+def gen_model_vert_array() -> list[bytes]:
+    vert_array = []
+
+    for f in m_fbuf:
+        for i in f:
+            vert_array.append(m_vbuf[i])
+
+    return vert_array
 
 def gen_cube_verts() -> list[bytes]:
     vert_array = [
@@ -94,12 +137,7 @@ def gen_cube_verts() -> list[bytes]:
         glm.vec3(1, 1, -1),
     ]
 
-    # rotate vertices on cpu side (for now) to animate the cube
-    clip_space_verts = []
-    for v in vert_array:
-        clip_space_verts.append(glm.rotateY(glm.rotateX(v * glm.vec3(.5), glm.radians(45)), time.perf_counter() / 5))
-
-    return clip_space_verts
+    return cpu_vert_stage(vert_array)
 
 def dispatch_gcs_frame():
     global bytes_written, bytes_read, ctime
@@ -107,7 +145,7 @@ def dispatch_gcs_frame():
     # setup gcs cbuf
 
     cmd_data = SCSHeaders.pack_ld_cbuf(0, GCSHeaders.pack_gs(fb_res))
-    scs_write(cmd_data)
+    _dev_write(cmd_data)
     bytes_written += len(cmd_data)
 
     # vertex stage
@@ -129,54 +167,55 @@ def dispatch_gcs_frame():
     #     vert_buf.extend(test_prim)
 
     vert_buf = gen_cube_verts()
-    ctime += 1 / 15
-    ctime = 0
-    
-    cmd_data = SCSHeaders.pack_disp_gcs() + GCSHeaders.pack_vs(0, len(vert_buf) // 3, b''.join(vert_buf))
-    scs_write(cmd_data)
-    bytes_written += len(cmd_data)
+    # ctime += 1 / 15
 
-    start_time = time.perf_counter()
+    # split up vertex array into 30-vert vertex streams
+    vert_streams = [vert_buf[i:i + 60] for i in range(0, len(vert_buf), 60)]
 
-    prim_output = scs_read(65535)
-    bytes_read += len(prim_output)
+    for vs in vert_streams:
+        start_time = time.perf_counter()
 
-    prim_count, shading_range = GCSHeaders.unpack_po(prim_output)
-    clip_buf = scs_read(65535)
-    bytes_read += len(clip_buf)
+        # assign batch
+        cmd_data = SCSHeaders.pack_disp_gcs() + GCSHeaders.pack_assign(0, len(vs) // 3, b''.join(vs))
+        _dev_write(cmd_data)
+        bytes_written += len(cmd_data)
 
-    fin_time = time.perf_counter()
-    print(f"prim output received! vertex time: {fin_time - start_time}s")
+        # await fragment output streams and ready gcs cmds
+        while True:
+            p_bytes = _dev_read(65535)
+            p = GCSHeaders.unpack(p_bytes)
 
-    # fragment stage
-    cmd_data = SCSHeaders.pack_disp_gcs() + GCSHeaders.pack_fs(shading_range, prim_count, clip_buf)
-    scs_write(cmd_data)
-    bytes_written += len(cmd_data)
+            if p[0] == 16:
+                print(p)
 
-    start_time = time.perf_counter()
+            if p[0] == 17:
+                break
 
-    # await fragment output streams and ready gcs cmds
-    while True:
-        p_head = scs_read(65535)
+            if p[0] == 18:
+                continue
 
-        if GCSHeaders.is_ready(p_head):
-            break
+                # read frag output stream
+                tile_count, fb_base_x, fb_base_y, to_read = GCSHeaders.unpack_fo(p_head)
+                bytes_read += 6 + to_read
 
-        # read frag output stream
-        tile_count, fb_base_x, fb_base_y, to_read = GCSHeaders.unpack_fo(p_head)
-        bytes_read += 6 + to_read
+                cv_buf = _dev_read(tile_count * 2)
+                col_buf = _dev_read(tile_count * GCSHeaders.COL_TILE_SIZE)
+                d_buf = _dev_read(tile_count * GCSHeaders.D_TILE_SIZE)
 
-        cv_buf = scs_read(tile_count * 2)
-        col_buf = scs_read(tile_count * GCSHeaders.COL_TILE_SIZE)
-        d_buf = scs_read(tile_count * GCSHeaders.D_TILE_SIZE)
+                patch_fb(tile_count, (fb_base_x, fb_base_y), cv_buf, col_buf, d_buf)
 
-        patch_fb(tile_count, (fb_base_x, fb_base_y), cv_buf, col_buf, d_buf)
+        fin_time = time.perf_counter()
+        print(f"gcs fin received! fragment time: {fin_time - start_time}s")
 
-    fin_time = time.perf_counter()
-    print(f"gcs ready received! fragment time: {fin_time - start_time}s")
-    print(fb_res)
+        if DEBUG_CPU_WIREFRAME:
+            points = []
+            for i, v in enumerate(vert_buf):
+                points.append(((v[0] * .5 + .5) * fb_res[0], (v[1] * .5 + .5) * fb_res[1]))
 
-    save_fb()
+            for i in range(len(vert_buf) // 3):
+                pg.draw.lines(fb, (255, 200, 200), True, points[i * 3:i * 3 + 3])
+
+    # save_fb()
 
 # upload test texture
 
@@ -185,11 +224,11 @@ img_tex = pg.transform.scale(img_data, (64, 64))
 
 tex_data = pg.image.tobytes(img_tex, 'RGBA')
 tex_xfer = SCSHeaders.pack_ld_cbuf(64, tex_data)
-scs_write(tex_xfer)
+_dev_write(tex_xfer)
 
 # mini frame loop
 
-while True:
+while True: # for i in range(math.ceil(math.pi * 2 * 5 / (1 / 15))):
     fb.fill((0, 0, 0))
     dispatch_gcs_frame()
 
