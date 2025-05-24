@@ -3,7 +3,6 @@
 #include <hardware/watchdog.h>
 
 #include <common/picopu_types.h>
-#include <shader_core/graphics_state.h>
 
 #include <common/tusb_types.h>
 #include <common/tusb_verify.h>
@@ -29,11 +28,13 @@ void hostbus_init() {
 
 void hostbus_reset(uint8_t rhport) {
     hb_dev = (struct hostbus_device_state){
-        .in_xfer_bytes = 0,
+        .in_xferred_bytes = 0,
         .out_xfer_buffered = 0,
         .out_xfer_sent = 0,
     };
 }
+
+extern uint8_t si_rx_buf[1024];
 
 uint16_t hostbus_open(uint8_t rhport, tusb_desc_interface_t const *itf_desc, uint16_t max_len) {
     TU_VERIFY(itf_desc->bInterfaceClass == TUSB_CLASS_VENDOR_SPECIFIC, 0);
@@ -50,7 +51,7 @@ uint16_t hostbus_open(uint8_t rhport, tusb_desc_interface_t const *itf_desc, uin
     // reset device state
     hb_rhport = rhport;
     hb_dev = (struct hostbus_device_state){
-        .in_xfer_bytes = 0,
+        .in_xferred_bytes = 0,
         .out_xfer_buffered = 0,
         .out_xfer_sent = 0,
     };
@@ -60,6 +61,8 @@ uint16_t hostbus_open(uint8_t rhport, tusb_desc_interface_t const *itf_desc, uin
 
     ep_desc = tu_desc_next(ep_desc);
     TU_ASSERT(usbd_open_edpt_pair(rhport, ep_desc, 2, TUSB_XFER_BULK, &transfer_in, &transfer_out));
+
+    usbd_edpt_xfer(hb_rhport, transfer_in, si_rx_buf, 1022);
 
     return len;
 }
@@ -71,12 +74,34 @@ bool hostbus_control_xfer_cb(uint8_t rhport, uint8_t stage, tusb_control_request
     return false; // leave handling at tusb core?
 }
 
+extern void si_irq_handler(uint32_t bytes);
+
 bool hostbus_xfer_cb(uint8_t rhport, uint8_t ep_addr, xfer_result_t result, uint32_t xferred_bytes) {
     TU_VERIFY(result == XFER_RESULT_SUCCESS);
 
     if (ep_addr == transfer_in) {
-        // signal that in xfer is complete
-        hb_dev.in_xfer_bytes = xferred_bytes;
+        // *(uint16_t *)(si_rx_buf + hb_dev.in_xferred_bytes) = (xferred_bytes + 1) / 2;
+
+        // uint32_t head = hb_dev.in_xferred_bytes + 2;
+        // hb_dev.in_xferred_bytes += xferred_bytes + 2;
+
+        // if (hb_dev.in_xferred_bytes >= 1024) {
+        //     memcpy(si_rx_buf + head, in_buf, 1024 - head);
+        //     memcpy(si_rx_buf, in_buf + head, xferred_bytes - (1024 - head));
+
+        //     hb_dev.in_xferred_bytes %= 1024;
+        // } else {
+        //     memcpy(si_rx_buf + head, in_buf, xferred_bytes);
+        // }
+
+        // usbd_edpt_xfer(hb_rhport, transfer_in, in_buf, 1024);
+        // si_irq_handler();
+
+        // *(uint16_t *)(si_rx_buf) = xferred_bytes;
+
+        si_irq_handler(xferred_bytes);
+        usbd_edpt_xfer(hb_rhport, transfer_in, si_rx_buf, 1022);
+
         return true;
     } else if (ep_addr == transfer_out) {
         hb_dev.out_xfer_sent++;
@@ -101,25 +126,6 @@ bool hostbus_xfer_cb(uint8_t rhport, uint8_t ep_addr, xfer_result_t result, uint
 }
 
 /* public api */
-
-uint16_t hostbus_xfer_in_blocking(void *buf, uint16_t max_bytes) {
-    // no read xfer must be active
-    assert(!hb_dev.in_xfer_bytes);
-    if (!usbd_edpt_xfer(hb_rhport, transfer_in, buf, max_bytes)) {
-        watchdog_reboot(0, 0, 0);
-    }
-
-    // block until xfer is complete
-    while (!hb_dev.in_xfer_bytes) {
-        tud_task();
-        watchdog_update();
-    }
-
-    uint16_t bytes_read = hb_dev.in_xfer_bytes;
-    hb_dev.in_xfer_bytes = 0;
-
-    return bytes_read;
-}
 
 void hostbus_xfer_out(void *buf, uint16_t size) {
     while (hb_dev.out_xfer_buffered == 128 || (hb_dev.out_xfer_buffered ? hb_dev.out_xfer_buf[hb_dev.out_xfer_buffered - 1].xfer_offset + hb_dev.out_xfer_buf[hb_dev.out_xfer_buffered - 1].xfer_size + size > TRANSFER_BUF_SIZE : false)) {

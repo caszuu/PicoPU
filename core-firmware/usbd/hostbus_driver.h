@@ -34,7 +34,7 @@ struct hb_xfer {
 
 struct hostbus_device_state {
     // used for blocking in xfers, 0 until in xfer is complete
-    uint16_t in_xfer_bytes;
+    uint16_t in_xferred_bytes;
 
     struct hb_xfer out_xfer_buf[128];
     uint16_t out_xfer_buffered;

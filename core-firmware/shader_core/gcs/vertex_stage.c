@@ -1,26 +1,30 @@
 #include "common.h"
 
 #include <chip_state.h>
-#include <common/gcs_proto.h>
+#include <common/si_proto.h>
 #include <usbd/hostbus_driver.h>
 
-static inline void dispatch_vertex(float v_pos[4], const void *attrib_buf) {
+static inline void dispatch_vertex(v4f32 *v_pos, struct clip_point *out_clip, const void *attrib_buf) {
     /* user vertex shader */
 
     const float *in_pos = (float *)(attrib_buf);
 
-    v_pos[0] = in_pos[0];
-    v_pos[1] = in_pos[1];
-    v_pos[2] = in_pos[2];
-    v_pos[3] = 1.f;
+    v4f32 p = {
+        in_pos[0],
+        in_pos[1],
+        in_pos[2],
+        1.f,
+    };
 
     /* vertex early post-process */
 
     // prespective divide -> to NDCs
-    float w_inv = 1.f / v_pos[3];
-    v_pos[0] *= w_inv;
-    v_pos[1] *= w_inv;
-    v_pos[2] *= w_inv;
+    float w_inv = 1.f / p[3];
+    p[0] *= w_inv;
+    p[1] *= w_inv;
+    p[2] *= w_inv;
+
+    *v_pos = p;
 
     // TODO: shader attrib divides...
 }
@@ -30,7 +34,7 @@ static inline void dispatch_vertex(float v_pos[4], const void *attrib_buf) {
 // shared buffer for vertex-to-fragment state, vertex outputs will be written there
 struct gcs_v2f_state v2f;
 
-void dispatch_vertex_stage(struct gcs_assign_batch *batch) {
+void dispatch_vertex_stage(struct scs_vertex_batch *batch) {
     static const uint8_t v_count = 3;
 
     // local: vertex index in this vertex stream; global: vertex index in the entire draw command
@@ -45,7 +49,7 @@ void dispatch_vertex_stage(struct gcs_assign_batch *batch) {
     for (uint32_t prim_i = 0; prim_i < batch->primitive_count; prim_i++, local_vertex_index += v_count) {
         /* vertex stage */
 
-        float v_positions[v_count][4];
+        v4f32 v_positions[v_count];
 
         // Cohen–Sutherland algo out-codes (only using 6 bits)
         uint8_t v_out_codes = 0x3F;  // AND'ed viewport
@@ -53,7 +57,8 @@ void dispatch_vertex_stage(struct gcs_assign_batch *batch) {
 
         for (uint8_t pvi = 0; pvi < v_count; global_vertex_index++, pvi++) {
             // vertex shader
-            dispatch_vertex(v_positions[pvi], ((float *)attrib_buf) + (local_vertex_index + pvi) * 3);
+            static const uint32_t attrib_count = 3; // + 2;
+            dispatch_vertex(&v_positions[pvi], &v2f.clip_buf[output_vertex_index + pvi], ((float *)attrib_buf) + (local_vertex_index + pvi) * attrib_count);
 
             // post-shader
 
@@ -120,15 +125,35 @@ void dispatch_vertex_stage(struct gcs_assign_batch *batch) {
             signed_area = -signed_area;
         }
 
+        if (signed_area == 0) {
+            // degenerate trig, cull
+            continue;
+        }
+
+        // if (signed_area < 0) {
+        //     // back-face, cull
+        //     continue;
+        // }
+
         output_primitive_count++;
         output_vertex_index += v_count;
     }
 
+    // FIXME: shading_range limiting
+
     memcpy(v2f.shading_range, shading_area, sizeof(v2f.shading_range));
     v2f.prim_count = output_primitive_count;
 
-    struct gcs_batch_feedback p = {gcs_type_feedback, output_primitive_count};
-    memcpy(p.shading_range, shading_area, sizeof(v2f.shading_range));
+    struct si_dbg_packet p = {
+        .type = si_type_dbg,
+    };
 
-    hostbus_xfer_out(&p, sizeof(p));
+    // snprintf(p.dbg_message, MAX_SCS_DBG_SIZE, "vertex dbg, prim_count: %d %d %d", output_primitive_count, ((struct gcs_cbuf_state *)chip_state.cbuf)->fb_extent[0], ((struct gcs_cbuf_state *)chip_state.cbuf)->fb_extent[1]);
+    // hostbus_xfer_out(&p, sizeof(p));
+
+    // struct gcs_batch_feedback p = {gcs_type_feedback, output_primitive_count};
+    // p.c = output_primitive_count;
+    // memcpy(p.shading_range, shading_area, sizeof(v2f.shading_range));
+
+    // hostbus_xfer_out(&p, sizeof(p));
 }

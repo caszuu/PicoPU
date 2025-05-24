@@ -43,6 +43,8 @@ if (PICOPU_SINGLE_CHIP)
         single_chip.c
         ../usbd/usb_descriptors.c
         ../usbd/hostbus_driver.c
+
+        ../dvid/dvi.c
     )
 
     target_include_directories(shader_firmware PUBLIC

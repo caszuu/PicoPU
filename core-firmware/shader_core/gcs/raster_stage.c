@@ -2,7 +2,7 @@
 #include "sampler.h"
 
 #include <chip_state.h>
-#include <common/gcs_proto.h>
+#include <common/si_proto.h>
 
 #include <common/dma_mem.h>
 #include <common/instru.h>
@@ -38,7 +38,7 @@ struct trig_state {
 
 struct tile_slot {
     uint32_t c_tile[RASTER_TILE_SIZE * RASTER_TILE_SIZE];
-    float z_tile[RASTER_TILE_SIZE * RASTER_TILE_SIZE];
+    uint16_t z_tile[RASTER_TILE_SIZE * RASTER_TILE_SIZE];
 
     v2i32 p;
     uint32_t cv_tile; /* first 16 bits are used for TILE_SIZE == 4 */
@@ -128,11 +128,16 @@ static inline void rast_setup_trigs() {
 static bool is_odd_trig;
 
 // dispatches the per-fragment logic and fragment shader, returns if fragment was discarded
-static inline bool dispatch_frag(struct tile_slot *tile, int32_t w[], float wf[], float z, int32_t area, float area_inv, int32_t tile_x, int32_t tile_y) {
+static inline bool dispatch_frag(struct tile_slot *tile, const struct trig_state* trig, int32_t w[], int32_t tile_x, int32_t tile_y) {
     // depth test and write (assume no rc with early-z writes)
-    if (tile->z_tile[tile_x + tile_y * RASTER_TILE_SIZE] >= z)
+    float fw[] = {w[0], w[1], w[2]};
+    
+    float z = (trig->z[0] * fw[0] + trig->z[1] * fw[1] + trig->z[2] * fw[2]);
+    uint16_t iz = (z * .5f + .5f) * UINT16_MAX;
+
+    if (tile->z_tile[tile_x + tile_y * RASTER_TILE_SIZE] <= iz)
         return false;
-    tile->z_tile[tile_x + tile_y * RASTER_TILE_SIZE] = z;
+    tile->z_tile[tile_x + tile_y * RASTER_TILE_SIZE] = iz;
 
     // stencil test and write
 
@@ -144,15 +149,16 @@ static inline bool dispatch_frag(struct tile_slot *tile, int32_t w[], float wf[]
 
     v2f32 uv;
     if (is_odd_trig) {
-        uv = (v2f32){0.f * wf[0] * area_inv + 1.f * wf[1] * area_inv + 0.f * wf[2] * area_inv, 0.f * wf[0] * area_inv + 1.f * wf[1] * area_inv + 1.f * wf[2] * area_inv};
+        uv = (v2f32){0.f * fw[0] * trig->area_inv + 1.f * fw[1] * trig->area_inv + 0.f * fw[2] * trig->area_inv, 0.f * fw[0] * trig->area_inv + 1.f * fw[1] * trig->area_inv + 1.f * fw[2] * trig->area_inv};
     } else {
-        uv = (v2f32){0.f * wf[0] * area_inv + 1.f * wf[1] * area_inv + 1.f * wf[2] * area_inv, 0.f * wf[0] * area_inv + 0.f * wf[1] * area_inv + 1.f * wf[2] * area_inv};
+        uv = (v2f32){0.f * fw[0] * trig->area_inv + 1.f * fw[1] * trig->area_inv + 1.f * fw[2] * trig->area_inv, 0.f * fw[0] * trig->area_inv + 0.f * fw[1] * trig->area_inv + 1.f * fw[2] * trig->area_inv};
     }
-    // uv = (v2f32){ 0.f, 0.f };
+
+    // v2f32 uv = v2f.clip_buf[trig_i].uv;
 
     // INSTRU_RESET_SCOPE
-    // tile->c_tile[tile_x + tile_y * RASTER_TILE_SIZE] = PACK_RGBA8((uint32_t)(uv[0] * 255.f), (uint32_t)(uv[1] * 255.f), 0, 255);
-    tile->c_tile[tile_x + tile_y * RASTER_TILE_SIZE] = native_fetch_rgba8_nearest(uv);
+    tile->c_tile[tile_x + tile_y * RASTER_TILE_SIZE] = PACK_RGBA8((uint32_t)(uv[0] * 255.f), (uint32_t)(uv[1] * 255.f), 0, 255);
+    // tile->c_tile[tile_x + tile_y * RASTER_TILE_SIZE] = native_fetch_rgba8_nearest(uv);
     // tile->c_tile[tile_x + tile_y * RASTER_TILE_SIZE] = native_fetch_rgba8_bilinear(uv); // & 0xff0000ff;
     // INSTRU_SUBMIT_SCOPE_ID(0)
 
@@ -160,11 +166,6 @@ static inline bool dispatch_frag(struct tile_slot *tile, int32_t w[], float wf[]
 }
 
 static inline void rast_edge_tile(uint32_t trig_i, const struct trig_state *trig, struct tile_slot *slot) {
-    const float z[] = {trig->z[0], trig->z[1], trig->z[2]};
-
-    const int32_t area = trig->area;
-    const float area_inv = trig->area_inv;
-
     const int32_t *bw = trig_bw_buf[trig_i];
     int32_t w[3] = {
         offset_trig_edge(trig->a[0], trig->b[0], bw[0], slot->p),
@@ -183,11 +184,8 @@ static inline void rast_edge_tile(uint32_t trig_i, const struct trig_state *trig
             bool frag_cv = (row_w[0] | row_w[1] | row_w[2]) >= 0;
 
             if (frag_cv) {
-                float row_wf[] = {row_w[0], row_w[1], row_w[2]};
-                float frag_z = (z[0] * row_wf[0] + z[1] * row_wf[1] + z[2] * row_wf[2]);
-
                 // finally dispatch fragment
-                frag_cv = dispatch_frag(slot, row_w, row_wf, frag_z, area, area_inv, tile_x, tile_y);
+                frag_cv = dispatch_frag(slot, trig, row_w, tile_x, tile_y);
             }
 
             // write coverage
@@ -210,11 +208,6 @@ static inline void rast_edge_tile(uint32_t trig_i, const struct trig_state *trig
 
 // known: rasterize and shade a uniformly covered tile
 static inline void rast_full_tile(uint32_t trig_i, const struct trig_state *trig, struct tile_slot *slot) {
-    const float z[] = {trig->z[0], trig->z[1], trig->z[2]};
-
-    const int32_t area = trig->area;
-    const float area_inv = trig->area_inv;
-
     const int32_t *bw = trig_bw_buf[trig_i];
     int32_t w[3] = {
         offset_trig_edge(trig->a[0], trig->b[0], bw[0], slot->p),
@@ -229,11 +222,8 @@ static inline void rast_full_tile(uint32_t trig_i, const struct trig_state *trig
         int32_t row_w[] = {w[0], w[1], w[2]};
 
         for (int32_t tile_x = 0; tile_x < RASTER_TILE_SIZE; tile_x++) {
-            float row_wf[] = {row_w[0], row_w[1], row_w[2]};
-            float frag_z = (z[0] * row_wf[0] + z[1] * row_wf[1] + z[2] * row_wf[2]);
-
             // dispatch fragment
-            bool frag_cv = dispatch_frag(slot, row_w, row_wf, frag_z, area, area_inv, tile_x, tile_y);
+            bool frag_cv = dispatch_frag(slot, trig, row_w, tile_x, tile_y);
             local_cv_mask |= frag_cv << (tile_x + tile_y * RASTER_TILE_SIZE);
 
             // step collum
@@ -251,9 +241,19 @@ static inline void rast_full_tile(uint32_t trig_i, const struct trig_state *trig
     slot->cv_tile |= local_cv_mask;
 }
 
-extern uint8_t dvi_fb[640 * 480];
+extern uint16_t *dvi_fb;
+extern uint16_t zs_fb[320 * 240];
+
 static __force_inline uint8_t colour_rgb332(uint32_t rgba) {
     return ((rgba >> 16) & 0xc0) >> 6 | ((rgba >> 8) & 0xe0) >> 3 | ((rgba) & 0xe0) >> 0;
+}
+
+static __force_inline uint16_t colour_rgb565(uint32_t rgbx) {
+    return ((rgbx >> 16) & 0xf8) >> 3 | ((rgbx >> 8) & 0xfc) << 3 | ((rgbx) & 0xf8) << 8;
+}
+
+static __force_inline uint32_t from_rgb565(uint16_t rgb) {
+    return ((rgb << 3) & 0xf8) << 16 | ((rgb >> 3) & 0xfc) << 8 | ((rgb >> 8) & 0xf8);
 }
 
 static void rast_dispatch_tile(struct tile_slot *slot) {
@@ -268,15 +268,22 @@ static void rast_dispatch_tile(struct tile_slot *slot) {
             rast_edge_tile(trig_i, trig, slot);
     }
 
-    // xfer fragment outputs if tile was modified
-    if (slot->cv_tile) {
-        // temp. dvi_buf format conv and output
-        for (uint32_t x = 0; x < 4; x++) {
-            for (uint32_t y = 0; y < 4; y++) {
-                if (slot->cv_tile & (1u << (x + y * 4)))
-                    dvi_fb[slot->p[0] + x + (slot->p[1] + y) * 640] = colour_rgb332(slot->c_tile[x + y * 4]);
-                // dvi_fb[slot->p[0] + x + (slot->p[1] + y) * 640] = slot->c_tile[x + y * 4];
-            }
+    if (!slot->cv_tile)
+        return;
+
+    // fb output
+
+    // temp. dvi_buf format conv and output
+    for (uint32_t x = 0; x < 4; x++) {
+        for (uint32_t y = 0; y < 4; y++) {
+            dvi_fb[slot->p[0] + x + (slot->p[1] + y) * 320] = colour_rgb565(slot->c_tile[x + y * 4]);
+        }
+    }
+
+    // dma_memcpy32(RAST_DMACH1, &zs_fb[(slot->p[0] * 4 + slot->p[1] * 320)], slot->z_tile, sizeof(slot->z_tile) / sizeof(uint32_t));
+    for (uint32_t x = 0; x < 4; x++) {
+        for (uint32_t y = 0; y < 4; y++) {
+            zs_fb[slot->p[0] + x + (slot->p[1] + y) * 320] = slot->z_tile[x + y * 4];
         }
     }
 }
@@ -285,8 +292,8 @@ static void rast_dispatch_tiles() {
     // FIXME: this needs to be done better
     //        eats too many cycles when not many tiles are pending
 
-    if (!pending_tiles)
-        return;
+    // if (!pending_tiles)
+    //     return;
 
     for (uint32_t i = 0; i < TILE_SLOT_COUNT; i++) {
         if (pending_tiles & (1u << i)) {
@@ -294,15 +301,36 @@ static void rast_dispatch_tiles() {
             pending_tiles &= ~(1u << i);
         }
     }
+
+    // while (pending_tiles) {
+    //     uint32_t i = __builtin_clz(pending_tiles);
+    //     rast_dispatch_tile(&tile_slots[i]);
+
+    //     pending_tiles &= ~(1u << i);
+    // }
 }
 
 static void rast_request_tile(struct tile_slot *slot) {
     // attachment tile clears
     // FIXME: stub
 
-    const float z_clear = -1.f;
-    dma_memset32(RAST_DMACH0, slot->z_tile, *(uint32_t *)&z_clear, sizeof(slot->z_tile) / sizeof(uint32_t));
-    dma_memset32(RAST_DMACH1, slot->c_tile, 0, sizeof(slot->c_tile) / sizeof(uint32_t));
+    // dma_memset32(RAST_DMACH0, slot->z_tile, UINT32_MAX, sizeof(slot->z_tile) / sizeof(uint32_t));
+    // dma_memset32(RAST_DMACH1, slot->c_tile, 0, sizeof(slot->c_tile) / sizeof(uint32_t));
+
+    // dma_memcpy32(RAST_DMACH0, slot->z_tile, &zs_fb[(slot->p[0] * 4 + slot->p[1] * 320)], sizeof(slot->z_tile) / sizeof(uint32_t));
+    for (uint32_t x = 0; x < 4; x++) {
+        for (uint32_t y = 0; y < 4; y++) {
+            slot->z_tile[x + y * 4] = zs_fb[slot->p[0] + x + (slot->p[1] + y) * 320];
+        }
+    }
+
+    // dma_memcpy32(RAST_DMACH1, slot->c_tile, &dvi_fb[(slot->p[0] + slot->p[1] * 320)], sizeof(slot->c_tile) / sizeof(uint32_t));
+    // expand tile from *linear* dvi buffer for rendering
+    for (uint32_t x = 0; x < 4; x++) {
+        for (uint32_t y = 0; y < 4; y++) {
+            slot->c_tile[x + y * 4] = from_rgb565(dvi_fb[slot->p[0] + x + (slot->p[1] + y) * 320]);
+        }
+    }
 
     pending_tiles |= 1u;
 }
@@ -322,8 +350,6 @@ void rast_range() {
     cfg = interp_default_config();
     interp_config_set_signed(&cfg, false);
     interp_set_config(interp0, 1, &cfg);
-
-    memset(dvi_fb, 0, sizeof(dvi_fb));
 
     // intra-tile rasterizer loop
 
@@ -389,6 +415,8 @@ void rast_range() {
                     continue;
 
                 if (!tile_fetched) {
+                    slot->p = p;
+
                     rast_request_tile(slot);
                     tile_fetched = true;
                 }
@@ -403,7 +431,6 @@ void rast_range() {
             if (!tile_fetched)
                 continue;
 
-            slot->p = p;
             slot->cv_tile = 0;
 
             slot->edge_trigs = edge_trigs;

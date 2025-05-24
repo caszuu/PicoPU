@@ -1,0 +1,17 @@
+# init device
+sel init
+clear
+ld_gstate
+ld_img test.png 64 64
+# ld_cube c
+ld_obj c teapot.obj
+exec
+
+# record frame cmdbuf
+sel frame
+clear
+vbatch c
+flip
+
+# dipatch frames
+exec_loop

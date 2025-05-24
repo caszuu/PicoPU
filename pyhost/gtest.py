@@ -16,7 +16,7 @@ except ImportError:
 
 DEBUG_WINDOW = False
 DEBUG_CPU_WIREFRAME = False
-fb_res = (640, 380)
+fb_res = (640, 480)
 # fb_res = (120, 100)
 
 pg.init()
@@ -79,17 +79,17 @@ def load_model(path = "bunny.obj"):
                 l = l[2:].strip()
                 indices = l.split(" ")
 
-                m_fbuf.append((int(indices[0].split("//")[0]) - 1, int(indices[1].split("//")[0]) - 1, int(indices[2].split("//")[0]) - 1))
+                m_fbuf.append((int(indices[0].split("/")[0]) - 1, int(indices[1].split("/")[0]) - 1, int(indices[2].split("/")[0]) - 1))
     
     print(f"loaded model verts: {len(m_vbuf)} faces: {len(m_fbuf)}")
 
-load_model()
+load_model("teapot.obj")
 
 def cpu_vert_stage(vert_array: list[glm.vec3]) -> list[bytes]:
     # rotate vertices on cpu side (for now) to animate the verts
     clip_space_verts = []
     for v in vert_array:
-        clip_space_verts.append(glm.rotateY(glm.rotateX(v * glm.vec3(.5), glm.radians(45)), ctime / 5))
+        clip_space_verts.append(glm.rotateY(glm.rotateX(v * glm.vec3(.2), glm.radians(45)), ctime / 5))
 
     return clip_space_verts
 
@@ -98,7 +98,7 @@ def gen_model_vert_array() -> list[bytes]:
 
     for f in m_fbuf:
         for i in f:
-            vert_array.append(m_vbuf[i])
+            vert_array.append(m_vbuf[i] * glm.vec3(1, -1, 1))
 
     return vert_array
 
@@ -166,14 +166,15 @@ def dispatch_gcs_frame():
     #     ]
     #     vert_buf.extend(test_prim)
 
-    vert_buf = gen_cube_verts()
-    # ctime += 1 / 15
+    # vert_buf = gen_cube_verts()
+    vert_buf = cpu_vert_stage(gen_model_vert_array())
+    ctime += 1 / 15
 
-    # split up vertex array into 30-vert vertex streams
-    vert_streams = [vert_buf[i:i + 60] for i in range(0, len(vert_buf), 60)]
+    # split up vertex array into 6-vert vertex streams
+    vert_streams = [vert_buf[i:i + 6] for i in range(0, len(vert_buf), 6)]
+    start_time = time.perf_counter()
 
     for vs in vert_streams:
-        start_time = time.perf_counter()
 
         # assign batch
         cmd_data = SCSHeaders.pack_disp_gcs() + GCSHeaders.pack_assign(0, len(vs) // 3, b''.join(vs))
@@ -204,16 +205,16 @@ def dispatch_gcs_frame():
 
                 patch_fb(tile_count, (fb_base_x, fb_base_y), cv_buf, col_buf, d_buf)
 
-        fin_time = time.perf_counter()
-        print(f"gcs fin received! fragment time: {fin_time - start_time}s")
+    fin_time = time.perf_counter()
+    print(f"gcs fin received! fragment time: {fin_time - start_time}s")
 
-        if DEBUG_CPU_WIREFRAME:
-            points = []
-            for i, v in enumerate(vert_buf):
-                points.append(((v[0] * .5 + .5) * fb_res[0], (v[1] * .5 + .5) * fb_res[1]))
+    if DEBUG_CPU_WIREFRAME:
+        points = []
+        for i, v in enumerate(vert_buf):
+            points.append(((v[0] * .5 + .5) * fb_res[0], (v[1] * .5 + .5) * fb_res[1]))
 
-            for i in range(len(vert_buf) // 3):
-                pg.draw.lines(fb, (255, 200, 200), True, points[i * 3:i * 3 + 3])
+        for i in range(len(vert_buf) // 3):
+            pg.draw.lines(fb, (255, 200, 200), True, points[i * 3:i * 3 + 3])
 
     # save_fb()
 

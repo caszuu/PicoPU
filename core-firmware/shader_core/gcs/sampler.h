@@ -9,12 +9,9 @@
 
 // WIP sampler and texel fetching routine implementations
 
-typedef int8_t v4i8 __attribute__((vector_size(4)));
-typedef uint8_t v4u8 __attribute__((vector_size(4)));
-
 struct sampler_state {
     v2u32 texture_extent;
-    uint8_t *texture_dmem_addr;
+    uint8_t *texture_vram_addr;
 };
 
 /* sampler routines */
@@ -66,12 +63,12 @@ static inline void wrap_uv_clamp(v2f32 *uv, const struct sampler_state *state) {
 /* layout-aware memory fetchers */
 
 static inline void fetch_texel_4B_linear(uint32_t texel_buf[], v2u32 texel, const struct sampler_state *state) {
-    texel_buf[0] = *(uint32_t *)(state->texture_dmem_addr + (texel[0] + texel[1] * state->texture_extent[0]) * sizeof(uint32_t));
+    texel_buf[0] = *(uint32_t *)(state->texture_vram_addr + (texel[0] + texel[1] * state->texture_extent[0]) * sizeof(uint32_t));
 }
 
 static inline void fetch_quad_4B_linear(uint32_t texel_buf[], v2u32 texel, const struct sampler_state *state) {
     uint32_t texture_width = state->texture_extent[0];
-    uint32_t *quad_base = (uint32_t *)(state->texture_dmem_addr + (texel[0] + texel[1] * texture_width) * sizeof(uint32_t));
+    uint32_t *quad_base = (uint32_t *)(state->texture_vram_addr + (texel[0] + texel[1] * texture_width) * sizeof(uint32_t));
 
     texel_buf[0] = *(quad_base);
     texel_buf[1] = *(quad_base + 1);
@@ -85,14 +82,14 @@ static inline void fetch_texel_4B_tiled_8x8(uint32_t texel_buf[], v2u32 texel, c
     v2u32 tile = texel >> 3;
     v2u32 local_texel = texel & 7;
 
-    texel_buf[0] = *(uint32_t *)(state->texture_dmem_addr + (tile[0] + tile[1] * state->texture_extent[0] / 8) * tile_stride * sizeof(uint32_t) + (local_texel[0] + local_texel[1] * 8) * sizeof(uint32_t));
+    texel_buf[0] = *(uint32_t *)(state->texture_vram_addr + (tile[0] + tile[1] * state->texture_extent[0] / 8) * tile_stride * sizeof(uint32_t) + (local_texel[0] + local_texel[1] * 8) * sizeof(uint32_t));
 }
 
 /* public test fetch routines */
 
 static inline uint32_t native_fetch_rgba8_nearest(v2f32 uv) {
     struct sampler_state state = {
-        .texture_dmem_addr = chip_state.cbuf + 64,
+        .texture_vram_addr = chip_state.cbuf + 64,
         .texture_extent = (v2u32){64, 64},
     };
 
@@ -107,7 +104,7 @@ static inline uint32_t native_fetch_rgba8_nearest(v2f32 uv) {
 
 static inline uint32_t native_fetch_rgba8_bilinear(v2f32 uv) {
     struct sampler_state state = {
-        .texture_dmem_addr = chip_state.cbuf + 64,
+        .texture_vram_addr = chip_state.cbuf + 64,
         .texture_extent = (v2u32){64, 64},
     };
 

@@ -12,6 +12,8 @@
 struct clip_point {
     int32_t x, y;
     float z;
+
+    v2f32 uv;    // vertex texture coords
 };
 
 enum primitive_mode {
@@ -42,6 +44,6 @@ struct gcs_cbuf_state {
 struct gcs_v2f_state {
     uint32_t prim_count;
     struct clip_point clip_buf[MAX_VERTICES_PER_BATCH];
-    
+
     int32_t shading_range[4];
 };
