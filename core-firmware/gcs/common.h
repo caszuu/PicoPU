@@ -13,7 +13,7 @@ struct clip_point {
     int32_t x, y;
     float z;
 
-    v2f32 uv;    // vertex texture coords
+    v2f32 uv; // vertex texture coords
 };
 
 enum primitive_mode {
@@ -32,7 +32,7 @@ typedef enum primitive_mode primitive_mode_t;
 
 /* gcs structs and intermediate buffers */
 
-struct gcs_cbuf_state {
+struct gcs_gstate {
     uint16_t fb_extent[2];
     float viewport_transform_params[3][2];
 

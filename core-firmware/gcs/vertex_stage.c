@@ -2,7 +2,7 @@
 
 #include <chip_state.h>
 #include <common/si_proto.h>
-#include <usbd/hostbus_driver.h>
+#include <usbd/usb.h>
 
 static inline void dispatch_vertex(v4f32 *v_pos, struct clip_point *out_clip, const void *attrib_buf) {
     /* user vertex shader */
