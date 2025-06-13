@@ -30,7 +30,7 @@
 #include "common/tusb_types.h"
 #include "tusb.h"
 
-#include "hostbus_driver.h"
+#include "usb.h"
 
 /* A combination of interfaces must have a unique product id, since PC will save device driver after the first plug.
  * Same VID/PID with different interface e.g MSC (first), then CDC (later) will possibly cause system error on PC.
@@ -58,7 +58,7 @@ tusb_desc_device_t const desc_device =
     .bDeviceProtocol    = 0x00,
     .bMaxPacketSize0    = CFG_TUD_ENDPOINT0_SIZE,
 
-    .idVendor           = 0xCafe,
+    .idVendor           = 0xcafe,
     .idProduct          = USB_PID,
     .bcdDevice          = 0x0110,
 
@@ -80,12 +80,12 @@ uint8_t const * tud_descriptor_device_cb(void)
 // Configuration Descriptor
 //--------------------------------------------------------------------+
 
-struct hostbus_config_descriptor const desc_configuration =
+struct usb_config_descriptor const desc_configuration =
 {
   .config = {
     .bLength = sizeof(tusb_desc_configuration_t),
     .bDescriptorType = TUSB_DESC_CONFIGURATION,
-    .wTotalLength = sizeof(struct hostbus_config_descriptor),
+    .wTotalLength = sizeof(struct usb_config_descriptor),
     .bNumInterfaces = 1,
     .bConfigurationValue = 1,
     .iConfiguration = 4,
@@ -97,15 +97,14 @@ struct hostbus_config_descriptor const desc_configuration =
     .bDescriptorType = TUSB_DESC_INTERFACE,
     .bInterfaceNumber = 0,
     .bAlternateSetting = 0,
-    .bNumEndpoints = 3,
+    .bNumEndpoints = 2,
     .bInterfaceClass = TUSB_CLASS_VENDOR_SPECIFIC,
     .bInterfaceSubClass = 0x00,
     .bInterfaceProtocol = 0x00,
     .iInterface = 0,
   },
-  .sync_endpoint = HOSTBUS_ENDPOINT_DESC(0x81, TUSB_XFER_INTERRUPT, CFG_HOSTBUS_SYNC_EP_SIZE, CFG_HOSTBUS_SYNC_INTERVAL),
-  .trans_up_endpoint = HOSTBUS_ENDPOINT_DESC(0x02, TUSB_XFER_BULK, CFG_HOSTBUS_TRANSFER_UP_EP_SIZE, 0),
-  .trans_down_endpoint = HOSTBUS_ENDPOINT_DESC(0x82, TUSB_XFER_BULK, CFG_HOSTBUS_TRANSFER_DOWN_EP_SIZE, 0),
+  .trans_up_endpoint = USB_ENDPOINT_DESC(0x01, TUSB_XFER_BULK, CFG_USB_XFER_EP_SIZE, 0),
+  .trans_down_endpoint = USB_ENDPOINT_DESC(0x81, TUSB_XFER_BULK, CFG_USB_XFER_EP_SIZE, 0),
 };
 
 // Invoked when received GET CONFIGURATION DESCRIPTOR
@@ -132,11 +131,11 @@ enum {
 // array of pointer to string descriptors
 char const *string_desc_arr[] =
 {
-  (const char[]) { 0x09, 0x04 },  // 0: is supported language is English (0x0409)
+  (const char[]) { 0x09, 0x04 },  // 0: supported language is English (0x0409)
   "No Vendor",                    // 1: Manufacturer
-  "Single-Chip PicoPU",           // 2: Product
+  "{Arch} PicoPU",                // 2: Product (TODO embed arch macro)
   NULL,                           // 3: Serials will use unique ID if possible
-  "HostBus Interface",            // 4: HostBus Interface
+  "drv interface",                // 4: Interface
 };
 
 static uint16_t _desc_str[32 + 1];

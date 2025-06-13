@@ -95,11 +95,7 @@
 #define CFG_TUD_ENDPOINT0_SIZE    64
 #endif
 
-#define CFG_HOSTBUS_SYNC_EP_SIZE 64
-#define CFG_HOSTBUS_SYNC_INTERVAL 4 // (ms)
-
-#define CFG_HOSTBUS_TRANSFER_UP_EP_SIZE 64
-#define CFG_HOSTBUS_TRANSFER_DOWN_EP_SIZE 64
+#define CFG_USB_XFER_EP_SIZE     64
 
 #ifdef __cplusplus
  }
