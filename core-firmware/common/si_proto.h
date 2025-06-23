@@ -32,7 +32,7 @@ struct scs_vertex_batch {
     uint8_t v2f_idx;
 
     uint8_t primitive_count;
-    uint32_t vertex_base;
+    uint32_t index_base;
 };
 
 // dispatch a raster batch - shades a range of fragments from current v2f state

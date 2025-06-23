@@ -1,7 +1,9 @@
 #include "common.h"
 #include "sampler.h"
+#include "shader.h"
 
-#include <chip_state.h>
+#include <chip.h>
+#include <common/ex_simd.h>
 #include <common/si_proto.h>
 
 #include <common/dma_mem.h>
@@ -12,7 +14,7 @@
 #include <stdint.h>
 #include <string.h>
 
-// huge shoutout to Fabian Giesen and theirs blogs by which this implementation is heavily inspired
+// huge shoutout to Fabian Giesen and their blogs without which this project wouldn't exist
 //  - https://fgiesen.wordpress.com/2013/02/17/optimizing-sw-occlusion-culling-index/
 //  - https://fgiesen.wordpress.com/2011/07/09/a-trip-through-the-graphics-pipeline-2011-index/
 
@@ -128,10 +130,10 @@ static inline void rast_setup_trigs() {
 static bool is_odd_trig;
 
 // dispatches the per-fragment logic and fragment shader, returns if fragment was discarded
-static inline bool dispatch_frag(struct tile_slot *tile, const struct trig_state* trig, int32_t w[], int32_t tile_x, int32_t tile_y) {
+static inline bool dispatch_frag(struct tile_slot *tile, const struct trig_state *trig, int32_t w[], int32_t tile_x, int32_t tile_y) {
     // depth test and write (assume no rc with early-z writes)
     float fw[] = {w[0], w[1], w[2]};
-    
+
     float z = (trig->z[0] * fw[0] + trig->z[1] * fw[1] + trig->z[2] * fw[2]);
     uint16_t iz = (z * .5f + .5f) * UINT16_MAX;
 
@@ -241,9 +243,6 @@ static inline void rast_full_tile(uint32_t trig_i, const struct trig_state *trig
     slot->cv_tile |= local_cv_mask;
 }
 
-extern uint16_t *dvi_fb;
-extern uint16_t zs_fb[320 * 240];
-
 static __force_inline uint8_t colour_rgb332(uint32_t rgba) {
     return ((rgba >> 16) & 0xc0) >> 6 | ((rgba >> 8) & 0xe0) >> 3 | ((rgba) & 0xe0) >> 0;
 }
@@ -276,14 +275,14 @@ static void rast_dispatch_tile(struct tile_slot *slot) {
     // temp. dvi_buf format conv and output
     for (uint32_t x = 0; x < 4; x++) {
         for (uint32_t y = 0; y < 4; y++) {
-            dvi_fb[slot->p[0] + x + (slot->p[1] + y) * 320] = colour_rgb565(slot->c_tile[x + y * 4]);
+            ((uint16_t *)vaddr(gs.fb_c0))[slot->p[0] + x + (slot->p[1] + y) * 320] = colour_rgb565(slot->c_tile[x + y * 4]);
         }
     }
 
     // dma_memcpy32(RAST_DMACH1, &zs_fb[(slot->p[0] * 4 + slot->p[1] * 320)], slot->z_tile, sizeof(slot->z_tile) / sizeof(uint32_t));
     for (uint32_t x = 0; x < 4; x++) {
         for (uint32_t y = 0; y < 4; y++) {
-            zs_fb[slot->p[0] + x + (slot->p[1] + y) * 320] = slot->z_tile[x + y * 4];
+            ((uint16_t *)vaddr(gs.fb_zs))[slot->p[0] + x + (slot->p[1] + y) * 320] = slot->z_tile[x + y * 4];
         }
     }
 }
@@ -320,7 +319,7 @@ static void rast_request_tile(struct tile_slot *slot) {
     // dma_memcpy32(RAST_DMACH0, slot->z_tile, &zs_fb[(slot->p[0] * 4 + slot->p[1] * 320)], sizeof(slot->z_tile) / sizeof(uint32_t));
     for (uint32_t x = 0; x < 4; x++) {
         for (uint32_t y = 0; y < 4; y++) {
-            slot->z_tile[x + y * 4] = zs_fb[slot->p[0] + x + (slot->p[1] + y) * 320];
+            slot->z_tile[x + y * 4] = ((uint16_t *)vaddr(gs.fb_zs))[slot->p[0] + x + (slot->p[1] + y) * 320];
         }
     }
 
@@ -328,7 +327,7 @@ static void rast_request_tile(struct tile_slot *slot) {
     // expand tile from *linear* dvi buffer for rendering
     for (uint32_t x = 0; x < 4; x++) {
         for (uint32_t y = 0; y < 4; y++) {
-            slot->c_tile[x + y * 4] = from_rgb565(dvi_fb[slot->p[0] + x + (slot->p[1] + y) * 320]);
+            slot->c_tile[x + y * 4] = from_rgb565(((uint16_t *)vaddr(gs.fb_c0))[slot->p[0] + x + (slot->p[1] + y) * 320]);
         }
     }
 
@@ -452,8 +451,8 @@ void rast_trigs() {
 
 /* raster / fragment stage entry */
 
-void dispatch_raster_stage() {
-    switch (((struct gcs_cbuf_state *)(chip_state.cbuf))->rasterizer_mode) {
+void dispatch_raster_batch(struct scs_raster_batch *b) {
+    switch (gs.rasterizer_mode) {
     case e_prim_trig:
         rast_trigs();
         break;

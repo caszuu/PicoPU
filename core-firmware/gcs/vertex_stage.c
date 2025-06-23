@@ -1,20 +1,30 @@
-#include "common.h"
+#include "shader.h"
 
-#include <chip_state.h>
+#include <chip.h>
+#include <common/ex_simd.h>
 #include <common/si_proto.h>
-#include <usbd/usb.h>
 
-static inline void dispatch_vertex(v4f32 *v_pos, struct clip_point *out_clip, const void *attrib_buf) {
+#include <string.h>
+
+struct in_attribs {
+    float pos[3];
+    float norm[3];
+};
+
+static inline void dispatch_vertex(v4f32 *v_pos, struct clip_point *out_clip, uint32_t vertex_index) {
     /* user vertex shader */
 
-    const float *in_pos = (float *)(attrib_buf);
+    const struct in_attribs *attribs = (const struct in_attribs *)(vaddr(gs.vbuf)) + vertex_index;
 
     v4f32 p = {
-        in_pos[0],
-        in_pos[1],
-        in_pos[2],
+        attribs->pos[0],
+        attribs->pos[1],
+        attribs->pos[2],
         1.f,
     };
+
+    struct demo_cbuf *unif = (struct demo_cbuf *)cbuf;
+    p = ex_mul4(unif->view_mat, p);
 
     /* vertex early post-process */
 
@@ -34,17 +44,15 @@ static inline void dispatch_vertex(v4f32 *v_pos, struct clip_point *out_clip, co
 // shared buffer for vertex-to-fragment state, vertex outputs will be written there
 struct gcs_v2f_state v2f;
 
-void dispatch_vertex_stage(struct scs_vertex_batch *batch) {
+void dispatch_vertex_batch(struct scs_vertex_batch *batch) {
     static const uint8_t v_count = 3;
 
     // local: vertex index in this vertex stream; global: vertex index in the entire draw command
-    uint32_t local_vertex_index = 0, global_vertex_index = batch->vertex_base;
+    uint32_t local_vertex_index = 0, global_vertex_index = batch->index_base;
     uint32_t output_primitive_count = 0, output_vertex_index = 0;
 
-    const uint8_t *attrib_buf = (uint8_t *)(batch + 1);
-
     // accumulated shading_area between all prims
-    int32_t shading_area[4] = {((struct gcs_cbuf_state *)chip_state.cbuf)->fb_extent[0], ((struct gcs_cbuf_state *)chip_state.cbuf)->fb_extent[1], 0, 0};
+    int32_t shading_area[4] = {gs.fb_extent[0], gs.fb_extent[1], 0, 0};
 
     for (uint32_t prim_i = 0; prim_i < batch->primitive_count; prim_i++, local_vertex_index += v_count) {
         /* vertex stage */
@@ -57,8 +65,7 @@ void dispatch_vertex_stage(struct scs_vertex_batch *batch) {
 
         for (uint8_t pvi = 0; pvi < v_count; global_vertex_index++, pvi++) {
             // vertex shader
-            static const uint32_t attrib_count = 3; // + 2;
-            dispatch_vertex(&v_positions[pvi], &v2f.clip_buf[output_vertex_index + pvi], ((float *)attrib_buf) + (local_vertex_index + pvi) * attrib_count);
+            dispatch_vertex(&v_positions[pvi], &v2f.clip_buf[output_vertex_index + pvi], local_vertex_index + pvi);
 
             // post-shader
 
@@ -97,9 +104,9 @@ void dispatch_vertex_stage(struct scs_vertex_batch *batch) {
             struct clip_point *clip = &v2f.clip_buf[output_vertex_index + pvi];
 
             *clip = (struct clip_point){
-                .x = v_positions[pvi][0] * ((struct gcs_cbuf_state *)chip_state.cbuf)->viewport_transform_params[0][0] + ((struct gcs_cbuf_state *)chip_state.cbuf)->viewport_transform_params[0][1],
-                .y = v_positions[pvi][1] * ((struct gcs_cbuf_state *)chip_state.cbuf)->viewport_transform_params[1][0] + ((struct gcs_cbuf_state *)chip_state.cbuf)->viewport_transform_params[1][1],
-                .z = v_positions[pvi][2] * ((struct gcs_cbuf_state *)chip_state.cbuf)->viewport_transform_params[2][0] + ((struct gcs_cbuf_state *)chip_state.cbuf)->viewport_transform_params[2][1],
+                .x = v_positions[pvi][0] * gs.viewport_transform_params[0][0] + gs.viewport_transform_params[0][1],
+                .y = v_positions[pvi][1] * gs.viewport_transform_params[1][0] + gs.viewport_transform_params[1][1],
+                .z = v_positions[pvi][2] * gs.viewport_transform_params[2][0] + gs.viewport_transform_params[2][1],
             };
 
             // min/max the shading areas

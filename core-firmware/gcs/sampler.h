@@ -1,6 +1,6 @@
 #pragma once
 
-#include <chip_state.h>
+#include <chip.h>
 #include <common/ex_simd.h>
 
 #include <hardware/interp.h>
@@ -89,7 +89,7 @@ static inline void fetch_texel_4B_tiled_8x8(uint32_t texel_buf[], v2u32 texel, c
 
 static inline uint32_t native_fetch_rgba8_nearest(v2f32 uv) {
     struct sampler_state state = {
-        .texture_vram_addr = chip_state.cbuf + 64,
+        .texture_vram_addr = cbuf + 64,
         .texture_extent = (v2u32){64, 64},
     };
 
@@ -104,7 +104,7 @@ static inline uint32_t native_fetch_rgba8_nearest(v2f32 uv) {
 
 static inline uint32_t native_fetch_rgba8_bilinear(v2f32 uv) {
     struct sampler_state state = {
-        .texture_vram_addr = chip_state.cbuf + 64,
+        .texture_vram_addr = cbuf + 64,
         .texture_extent = (v2u32){64, 64},
     };
 

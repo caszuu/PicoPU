@@ -33,6 +33,14 @@ typedef enum primitive_mode primitive_mode_t;
 /* gcs structs and intermediate buffers */
 
 struct gcs_gstate {
+    // pipeline binds //
+    uint8_t *vbuf;
+    uint8_t *ibuf;
+
+    uint8_t *fb_c0;
+    uint8_t *fb_zs;
+
+    // pipeline state //
     uint16_t fb_extent[2];
     float viewport_transform_params[3][2];
 
@@ -46,4 +54,13 @@ struct gcs_v2f_state {
     struct clip_point clip_buf[MAX_VERTICES_PER_BATCH];
 
     int32_t shading_range[4];
+};
+
+// temp.
+struct demo_cbuf {
+    m4f32 view_mat;
+    m4f32 norm_mat;
+
+    v4f32 light_dir;
+    v4f32 col;
 };
