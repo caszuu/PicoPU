@@ -5,6 +5,7 @@ import (
 	"flag"
 	"log"
 	"os"
+	"time"
 
 	"github.com/caszuu/PicoPu/pdrv"
 	"github.com/google/gousb"
@@ -33,13 +34,21 @@ func main() {
 	}
 	defer dev.Destroy()
 
-	if *flash && *si_mode {
-		buf := make([]byte, 1024)
-		p := pdrv.SiFlash{Ptype: pdrv.SiTypeFlash}
+	if *flash {
+		var err error
 
-		binary.Encode(buf, binary.LittleEndian, p)
+		if *si_mode {
+			buf := make([]byte, 1024)
+			p := pdrv.SiFlash{Ptype: pdrv.SiTypeFlash}
 
-		err := dev.QueueOutXfer(buf)
+			binary.Encode(buf, binary.LittleEndian, p)
+
+			err = dev.QueueOutXfer(buf)
+		} else {
+			err = dev.CtlFlash()
+			time.Sleep(time.Millisecond * 750)
+		}
+
 		if err != nil && !*failsafe {
 			log.Fatalln("failed switching mode:", err)
 		}
