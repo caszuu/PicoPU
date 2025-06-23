@@ -4,59 +4,67 @@ import (
 	"encoding/binary"
 	"flag"
 	"log"
+	"time"
 
 	"github.com/caszuu/PicoPu/pdrv"
+	"github.com/go-gl/mathgl/mgl32"
 	"github.com/google/gousb"
 )
 
 var (
 	res_w = flag.Uint("w", 640, "framebuffer width resolution")
 	res_h = flag.Uint("h", 480, "framebuffer height resolution")
+
+	objPath   = flag.String("m", "cube.obj", "model file path")
+	ledMode   = flag.Uint("lm", 1, "led mode (0 - off; 1 - rainbow; 2 - reactive)")
+	ledBright = flag.Float64("lb", .2, "led brightness (0.0 to 1.0)")
 )
 
-// a small cli utility to test out and benchmark
-// the pdrv and matching pico-pu firmware
+var (
+	rotX = float32(0)
+	rotY = float32(0)
+)
+
+// a tiny test model viewer directly using pdrv
 
 type gcsGstate struct {
+	vbuf pdrv.VramAddr
+	ibuf pdrv.VramAddr
+	fbC0 pdrv.VramAddr
+	fbZs pdrv.VramAddr
+
 	fbExtent [2]uint16
 	viewport [3][2]float32
 
 	rasterMode byte
 }
 
-func packAndQueueCmd(dev *pdrv.Device, p any) int {
-	buf := make([]byte, 1024)
+func allocFramebuffer(valloc *pdrv.VramHeapScope) (*pdrv.VramAlloc, pdrv.VramAddr, pdrv.VramAddr, error) {
+	fbCSize := pdrv.VramSize(*res_w * *res_h * 2)
+	fbZsSize := pdrv.VramSize(*res_w * *res_h * 2)
 
-	pSize, _ := binary.Encode(buf, binary.LittleEndian, p)
-	err := dev.QueueOutXfer(buf[:pSize])
+	log.Printf("wh: %d %d c0: %d c1: %d zs: %d", *res_w, *res_h, fbCSize, fbCSize, fbZsSize)
+
+	fb, err := valloc.Alloc(fbCSize + fbCSize + fbZsSize)
 	if err != nil {
-		log.Fatalln("failed to queue cmd:", err)
+		return nil, 0, 0, err
 	}
 
-	return pSize
+	return fb, pdrv.VramAddr(fbCSize), pdrv.VramAddr(fbCSize + fbCSize), nil
 }
 
-func packAndQueueCmdWithTail(dev *pdrv.Device, p any, tail []byte) int {
-	buf := make([]byte, 1024)
-
-	pSize, _ := binary.Encode(buf, binary.LittleEndian, p)
-	copy(buf[pSize:], tail)
-
-	err := dev.QueueOutXfer(buf[:pSize+len(tail)])
-	if err != nil {
-		log.Fatalln("failed to queue tcmd:", err)
-	}
-
-	return pSize + len(tail)
-}
-
-func setupGcsGstate(dev *pdrv.Device) {
-	buf := make([]byte, 1024)
+func setupGstate(cb *pdrv.Cmdbuf, vbuf pdrv.VramAddr, ibuf pdrv.VramAddr, fb *pdrv.VramAlloc, zsOffset pdrv.VramAddr, cOffset pdrv.VramAddr) {
+	buf := make([]byte, 128)
 
 	offset := [2]uint{0, 0}
 	extent := [2]uint{*res_w, *res_h}
 
 	gstate := gcsGstate{
+		vbuf: vbuf,
+		ibuf: ibuf,
+		fbC0: fb.Addr() + cOffset,
+		fbZs: fb.Addr() + zsOffset,
+
 		fbExtent:   [2]uint16{uint16(extent[0]), uint16(extent[1])},
 		rasterMode: 3, // trig_fill
 
@@ -67,130 +75,132 @@ func setupGcsGstate(dev *pdrv.Device) {
 		},
 	}
 
-	p := pdrv.SiWriteCbufInline{
-		Ptype:       pdrv.SiTypeLoadCbufInline,
-		RangeSize:   32,
-		RangeOffset: 0,
-	}
-	siSize, _ := binary.Encode(buf, binary.LittleEndian, p)
-	gsSize, _ := binary.Encode(buf[siSize:], binary.LittleEndian, gstate)
-
-	err := dev.QueueOutXfer(buf[:siSize+gsSize])
+	gsSize, err := binary.Encode(buf, binary.LittleEndian, gstate)
 	if err != nil {
-		log.Fatalln("failed to queue gstate:", err)
+		panic(err)
+	}
+
+	err = cb.CmdPushGstate(buf[:(gsSize+3)&^3], 0)
+	if err != nil {
+		log.Fatalln("failed to push gstate:", err)
 	}
 }
 
-// pdrv list
-//  - dev_ctl api - done
-//  - vram/xfer subsys
-//    - immediate alloc/mgr
-//    - cmdbuf deferred ops
-//  - cmdbuf subsys
+func updateUniforms(dev *pdrv.Device, unif *pdrv.VramAlloc) {
+	// update cbuf data (following the demo_cbuf layout)
+
+	mq := mgl32.AnglesToQuat(rotX, rotY, 0, mgl32.XYZ)
+
+	m := mgl32.Scale3D(.5, .5, .5)
+	m = m.Mul4(mq.Mat4())
+
+	nm := mgl32.Ident4()
+
+	buf := make([]byte, 0)
+	buf, _ = binary.Append(buf, binary.LittleEndian, m)
+	buf, _ = binary.Append(buf, binary.LittleEndian, nm)
+	buf, _ = binary.Append(buf, binary.LittleEndian, mgl32.Vec4{-1, -1, -1}.Normalize())
+	buf, _ = binary.Append(buf, binary.LittleEndian, mgl32.Vec4{.8, .2, .8})
+
+	// stage cbuf data
+
+	err := dev.SubmitXferToDevice(buf, unif, 0)
+	if err != nil {
+		log.Fatalln("failed to stage cbuf:", err)
+	}
+}
 
 func main() {
 	flag.Parse()
 	log.SetFlags(log.Ltime | log.Lmicroseconds)
 
-	ctx := gousb.NewContext()
-	defer ctx.Close()
+	// setup device
 
-	dev, err := pdrv.InitDevice(ctx)
+	usbCtx := gousb.NewContext()
+	defer usbCtx.Close()
+
+	dev, err := pdrv.InitDevice(usbCtx)
 	if err != nil {
 		log.Fatalln("failed to init device:", err)
 	}
 	defer dev.Destroy()
 
-	// init benchmark
-
-	setupGcsGstate(dev)
-
-	// varray := genTrigArray()
-	varray, err := loadVertexArray("teapot.obj")
-	if err != nil {
-		log.Fatalln("failed to load varray:", err)
+	switch *ledMode {
+	case 0:
+		break
+	case 1:
+		go patternRainbow(dev, float32(*ledBright))
+	case 2:
+		go patternReactive(dev, float32(*ledBright))
+	default:
+		log.Fatalln("invalid led mode")
 	}
 
-	log.Printf("varray: %d", varray.vertCount)
+	valloc, err := dev.CreateHeapScope(0)
+	if err != nil {
+		log.Fatalln("failed to create a heap scope:", err)
+	}
+
+	// setup device bufs
+
+	fb, c1Offset, zsOffset, err := allocFramebuffer(valloc)
+	if err != nil {
+		log.Fatalln("failed to alloc fb:", err)
+	}
+	defer fb.Free()
+
+	m, err := loadModelFile(dev, valloc, *objPath)
+	if err != nil {
+		log.Fatalln("failed to load model:", err)
+	}
+	defer m.Destroy()
+
+	unifSize := pdrv.VramSize((16*2 + 4*2) * 4)
+	unif, err := valloc.Alloc(unifSize)
+	if err != nil {
+		log.Fatalln("failed to alloc uniform buf:", err)
+	}
+	defer unif.Free()
+
+	// record frame cmdbuf
+
+	cb := dev.NewCmdbuf()
+
+	setupGstate(cb, m.VbufAddr(), m.IbufAddr(), fb, zsOffset, 0)
+	cb.CmdWriteCbuf(unif, 0, pdrv.VramRange{Size: unifSize, Offset: 0})
+	cb.CmdClear()
+
+	m.Draw(cb)
+	cb.CmdPresent()
+
+	setupGstate(cb, m.VbufAddr(), m.IbufAddr(), fb, zsOffset, c1Offset)
+	cb.CmdClear()
+
+	m.Draw(cb)
+	cb.CmdPresent()
+
+	if err := cb.Finalize(valloc); err != nil {
+		log.Fatalln("failed to finalize cmdbuf:", err)
+	}
+	defer cb.Destroy()
 
 	// frame loop
 
-	pBuf := make([]byte, 1024)
-
 	for {
-		// vbatch dispatch
+		// update anim
 
-		vstreams := varray.assembleVertexStreams()
+		rotX += .05
+		rotY += .05
 
-		for _, vs := range vstreams {
-			vb := pdrv.SiVBatch{
-				Ptype:      pdrv.SiTypeVBatch,
-				V2fIdx:     0,
-				PrimCount:  byte(len(vs) / 4 / 3 / 3),
-				VertexBase: 0,
-			}
-			packAndQueueCmdWithTail(dev, vb, vs)
+		// submit frame
 
-			for {
-				_, err := dev.ReadInXfer(pBuf)
-				if err != nil {
-					log.Fatalln("error at vbatch:", err)
-				}
+		updateUniforms(dev, unif)
 
-				var pVal uint8
-				_, err = binary.Decode(pBuf, binary.LittleEndian, &pVal)
-				if err != nil {
-					log.Fatalln("dec err:", err)
-				}
-
-				pType := pdrv.SiPacketType(pVal)
-
-				if pType == pdrv.SiTypeFin {
-					break
-				} else if pType == pdrv.SiTypeDbg {
-					log.Println("vdbg:", string(pBuf[1:64]))
-				} else {
-					log.Println("unknown vbatch si pType:", pType)
-				}
-			}
-
-			// vbatch dispatch
-
-			fb := pdrv.SiRBatch{
-				Ptype:  pdrv.SiTypeRBatch,
-				V2fIdx: 0,
-			}
-			packAndQueueCmd(dev, fb)
-
-			for {
-				_, err := dev.ReadInXfer(pBuf)
-				if err != nil {
-					log.Fatalln("error in rbatch:", err)
-				}
-
-				var pVal uint8
-				_, err = binary.Decode(pBuf, binary.LittleEndian, &pVal)
-				if err != nil {
-					log.Fatalln("dec err:", err)
-				}
-
-				pType := pdrv.SiPacketType(pVal)
-
-				if pType == pdrv.SiTypeFin {
-					break
-				} else if pType == pdrv.SiTypeDbg {
-					log.Println("rdbg:", string(pBuf[1:64]))
-				} else {
-					log.Println("unknown rbatch si pType:", pType)
-				}
-			}
+		err = dev.SubmitEnqueue(cb)
+		if err != nil {
+			log.Fatalln("failed to submit frame:", err)
 		}
 
-		p := pdrv.SiFlip{
-			Ptype: pdrv.SiTypeFlip,
-		}
-		packAndQueueCmd(dev, p)
-
-		log.Println("frame fin")
+		time.Sleep(time.Millisecond * 30)
 	}
 }
