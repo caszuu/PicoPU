@@ -1,15 +1,19 @@
 # PicoPU
 
-A mecha project focused on building a very simplified open-source version of a General Purpose Graphics Processing Unit. (GPGPU) The project it self is made of multiple parts: the software drivers, the GPU firmware and the hardware PCB itself.
+A mecha project focused on building a very simple open-source General Purpose Graphics Processing Unit (GPGPU) using the amazing `rp2350` MCUs as compute cores. The project it self is made of multiple parts: the software drivers, the GPU firmware and the hardware PCB itself.
 
-The project is currently very WIP, only the firmware and board are currently being developed.
+The project is currently very WIP, more is to come.
 
 Monorepo subprojects:
 - `core-firmware/` - PicoPU firmware
-	- `common/` - shared firmware source files
-	- `shader_core/` - shader chip firmware
-	- (not yet) `broker_core/` - broker chip firmware
-- `broker-sim/` - software broker chip emulator
+	- `common/` - shared firmware utilities
+ 	- `usbd/` - a protocol generic `tinyusb` device driver
+  	- `dvid/` - a simple hstx-based dvi driver
+  	- `gcs/` - an arch agnostic software renderer
+	- `arch/` - device architecture specific source files
+		- `mockbird/` - RPi Pico 2 (mocking bird) arch firmware
+- `pdrv/` - a user-space host-side driver written in go
+	- `bench/` - an example application using directly `pdrv` apis
 - `boards/` - hardware board design
 	- `RP2350A_chip_board/` - board files for the shader chip
 	- `RP2350B_chip_board/` - board files for the broker chip
