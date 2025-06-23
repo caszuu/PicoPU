@@ -12,12 +12,12 @@ import (
 )
 
 var (
-	res_w = flag.Uint("w", 640, "framebuffer width resolution")
-	res_h = flag.Uint("h", 480, "framebuffer height resolution")
+	res_w = flag.Uint("w", 320, "framebuffer width resolution")
+	res_h = flag.Uint("h", 240, "framebuffer height resolution")
 
 	objPath   = flag.String("m", "cube.obj", "model file path")
-	ledMode   = flag.Uint("lm", 1, "led mode (0 - off; 1 - rainbow; 2 - reactive)")
-	ledBright = flag.Float64("lb", .2, "led brightness (0.0 to 1.0)")
+	ledMode   = flag.Uint("lm", 1, "led mode (0 - off; 1 - rainbow; 2 - audio reactive)")
+	ledBright = flag.Float64("lb", .1, "led brightness (0.0 to 1.0)")
 )
 
 var (
