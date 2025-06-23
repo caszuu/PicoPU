@@ -1,5 +1,3 @@
-# Generated Cmake Pico project file
-
 cmake_minimum_required(VERSION 3.13)
 
 set(CMAKE_C_STANDARD 11)
@@ -16,19 +14,22 @@ set(sdkVersion 2.1.1)
 set(toolchainVersion 13_2_Rel1)
 set(picotoolVersion 2.1.1)
 
-set(PICO_BOARD pico2 CACHE STRING "Board type")
+set(PICO_BOARD pimoroni_pga2350 CACHE STRING "Board type")
 
 # Pull in Raspberry Pi Pico SDK (must be before project)
 include(pico_sdk_import.cmake)
 
-if (PICO_SDK_VERSION_STRING VERSION_LESS "1.4.0")
-  message(FATAL_ERROR "Raspberry Pi Pico SDK version 1.4.0 (or later) required. Your version is ${PICO_SDK_VERSION_STRING}")
+if (PICO_SDK_VERSION_STRING VERSION_LESS "2.0.0")
+  message(FATAL_ERROR "Raspberry Pi Pico SDK version 2.0.0 (or later) required. Your version is ${PICO_SDK_VERSION_STRING}")
 endif()
 
 project(core-firmware C CXX ASM)
-
-# Initialise the Raspberry Pi Pico SDK
 pico_sdk_init()
 
 # add firmware subprojects
-add_subdirectory(shader_core)
+
+option(BUILD_ARCH_MOCKBIRD ON)
+
+if (BUILD_ARCH_MOCKBIRD)
+    add_subdirectory(arch/mockbird)
+endif()
