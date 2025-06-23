@@ -10,6 +10,7 @@
 #include <device/usbd_pvt.h>
 #include <tusb.h>
 
+#include <assert.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -20,10 +21,10 @@ static uint8_t ep_xfer_in;
 static uint8_t ep_xfer_out;
 static bool ep_xfer_out_idle;
 
-static uint8_t in_xfer_buf[2][USB_XFER_MAX_SIZE];
+static uint8_t in_xfer_buf[2][USB_XFER_MAX_PAK_SIZE];
 static bool in_xfer_current_buf;
 
-static uint8_t out_xfer_buf[USB_XFER_RING_COUNT][USB_XFER_MAX_SIZE];
+static uint8_t out_xfer_buf[USB_XFER_RING_COUNT][USB_XFER_MAX_PAK_SIZE];
 static uint16_t out_xfer_sizes[USB_XFER_RING_COUNT];
 static uint32_t out_xfer_buf_head, out_xfer_buf_tail;
 
@@ -66,26 +67,25 @@ static uint16_t usb_open(uint8_t rhport, tusb_desc_interface_t const *itf_desc, 
     TU_VERIFY(usbd_open_edpt_pair(usb_rhport, xfer_ep_pair, 2, TUSB_XFER_BULK, &ep_xfer_in, &ep_xfer_out));
 
     // setup initial read-in
-    usbd_edpt_xfer(usb_rhport, ep_xfer_in, in_xfer_buf[in_xfer_current_buf], USB_XFER_MAX_SIZE);
+    usbd_edpt_xfer(usb_rhport, ep_xfer_in, in_xfer_buf[in_xfer_current_buf], USB_XFER_MAX_PAK_SIZE);
     ep_xfer_out_idle = true;
 
     return drv_len;
 }
 
+// an ugly hack used by usb_ctl_data() while a usb_ctl_pak_cb() call is ongoing
+static tusb_control_request_t const *current_ctl_req = NULL;
+
 static bool usb_control_xfer_cb(uint8_t rhport, uint8_t stage, tusb_control_request_t const *req) {
-    if (stage != CONTROL_STAGE_SETUP)
+    if (stage != CONTROL_STAGE_SETUP && stage != CONTROL_STAGE_DATA)
         return true; // is this right?
 
-    uint8_t dbuf[64];
-    uint16_t len;
+    current_ctl_req = req;
 
-    bool handled = usb_ctl_pak_cb(req->bRequest, req->wValue, req->wIndex, dbuf, &len);
+    bool handled = usb_ctl_pak_cb(req->bRequest, req->wValue, req->wIndex, stage == CONTROL_STAGE_DATA);
 
-    if (!handled)
-        return false; // unsupported / unknown
-
-    tud_control_xfer(rhport, req, dbuf, len);
-    return true;
+    current_ctl_req = NULL;
+    return handled;
 }
 
 static bool usb_xfer_cb(uint8_t rhport, uint8_t ep_addr, xfer_result_t result, uint32_t xferred_bytes) {
@@ -94,8 +94,18 @@ static bool usb_xfer_cb(uint8_t rhport, uint8_t ep_addr, xfer_result_t result, u
     if (ep_addr == ep_xfer_in) {
         if (in_stream.bytes_remaining) {
             // stream in-progress, handle xfer to dst
-            // FIXME: implement streams
+            in_stream.bytes_remaining -= xferred_bytes;
+            in_stream.next_addr += xferred_bytes;
 
+            if (in_stream.bytes_remaining) {
+                uint32_t seg_size = MIN(in_stream.bytes_remaining, USB_XFER_MAX_STREAM_SEG_SIZE);
+                usbd_edpt_xfer(rhport, ep_xfer_in, in_stream.next_addr, seg_size);
+
+                return true;
+            }
+
+            // stream finished, pull in next pak
+            usb_setup_in_pak();
             return true;
         }
 
@@ -108,9 +118,15 @@ static bool usb_xfer_cb(uint8_t rhport, uint8_t ep_addr, xfer_result_t result, u
     } else if (ep_addr == ep_xfer_out) {
         if (out_stream.bytes_remaining) {
             // stream in-progress, handle xfer from src
-            // FIXME: implement streams
+            out_stream.bytes_remaining -= xferred_bytes;
+            out_stream.next_addr += xferred_bytes;
 
-            return true;
+            if (out_stream.bytes_remaining) {
+                uint32_t seg_size = MIN(out_stream.bytes_remaining, USB_XFER_MAX_STREAM_SEG_SIZE);
+                usbd_edpt_xfer(rhport, ep_xfer_out, out_stream.next_addr, seg_size);
+
+                return true;
+            }
         }
 
         // out xfer finished, setup next xfer
@@ -122,9 +138,18 @@ static bool usb_xfer_cb(uint8_t rhport, uint8_t ep_addr, xfer_result_t result, u
 
         uint32_t next_tail = (out_xfer_buf_tail + 1) % USB_XFER_RING_COUNT;
 
-        usbd_edpt_xfer(rhport, ep_xfer_out, out_xfer_buf[out_xfer_buf_tail], out_xfer_sizes[out_xfer_buf_tail]);
-        out_xfer_buf_tail = next_tail;
+        if (out_xfer_sizes[out_xfer_buf_tail]) {
+            // setup pak
+            usbd_edpt_xfer(rhport, ep_xfer_out, out_xfer_buf[out_xfer_buf_tail], out_xfer_sizes[out_xfer_buf_tail]);
+        } else {
+            // setup stream
+            memcpy(&out_stream, out_xfer_buf[out_xfer_buf_tail], sizeof(struct usb_stream));
 
+            uint32_t seg_size = MIN(out_stream.bytes_remaining, USB_XFER_MAX_STREAM_SEG_SIZE);
+            usbd_edpt_xfer(usb_rhport, ep_xfer_out, out_stream.next_addr, seg_size);
+        }
+
+        out_xfer_buf_tail = next_tail;
         return true;
     }
 
@@ -134,18 +159,22 @@ static bool usb_xfer_cb(uint8_t rhport, uint8_t ep_addr, xfer_result_t result, u
 /* usb public api */
 
 void usb_setup_in_pak() {
-    bool ok = usbd_edpt_xfer(usb_rhport, ep_xfer_in, in_xfer_buf[in_xfer_current_buf], USB_XFER_MAX_SIZE);
+    assert(!usbd_edpt_busy(usb_rhport, ep_xfer_in));
+
+    bool ok = usbd_edpt_xfer(usb_rhport, ep_xfer_in, in_xfer_buf[in_xfer_current_buf], USB_XFER_MAX_PAK_SIZE);
 }
 
 void usb_setup_in_stream(void *dst, uint32_t size) {
-    // FIXME: usb streams and setup
+    assert(!usbd_edpt_busy(usb_rhport, ep_xfer_in));
+
     in_stream.bytes_remaining = size;
     in_stream.next_addr = dst;
 
-    bool ok = usbd_edpt_xfer(usb_rhport, ep_xfer_in, in_xfer_buf[in_xfer_current_buf], USB_XFER_MAX_SIZE);
+    uint32_t seg_size = MIN(size, USB_XFER_MAX_STREAM_SEG_SIZE);
+    bool ok = usbd_edpt_xfer(usb_rhport, ep_xfer_in, dst, seg_size);
 }
 
-void usb_out_pak(const void *p, uint16_t size) {
+static uint32_t await_next_out_slot() {
     uint32_t next_head = (out_xfer_buf_head + 1) % USB_XFER_RING_COUNT;
 
     // check if queue is full, block if it is
@@ -154,8 +183,15 @@ void usb_out_pak(const void *p, uint16_t size) {
         watchdog_update();
     }
 
+    return next_head;
+}
+
+void usb_out_pak(const void *p, uint16_t size) {
+    uint32_t next_head = await_next_out_slot();
+
     // copy xfer data into queue
-    TU_ASSERT(size <= USB_XFER_MAX_SIZE);
+    assert(size <= USB_XFER_MAX_PAK_SIZE);
+    assert(size != 0); // size 0 paks are internally interpreted as streams
 
     memcpy(out_xfer_buf[out_xfer_buf_head], p, size);
     out_xfer_sizes[out_xfer_buf_head] = size;
@@ -164,9 +200,47 @@ void usb_out_pak(const void *p, uint16_t size) {
     if (ep_xfer_out_idle) {
         ep_xfer_out_idle = false;
         usbd_edpt_xfer(usb_rhport, ep_xfer_out, out_xfer_buf[out_xfer_buf_head], size);
+
+        out_xfer_buf_tail = next_head;
     }
 
     out_xfer_buf_head = next_head;
+}
+
+void usb_out_stream(void *src, uint32_t size) {
+    uint32_t next_head = await_next_out_slot();
+
+    // copy stream data into queue (with pak size == 0 to mark as a stream)
+    struct usb_stream *stream = (struct usb_stream *)out_xfer_buf[out_xfer_buf_head];
+    out_xfer_sizes[out_xfer_buf_head] = 0;
+
+    stream->bytes_remaining = size;
+    stream->next_addr = src;
+
+    // submit xfer
+    if (ep_xfer_out_idle) {
+        ep_xfer_out_idle = false;
+
+        memcpy(&out_stream, stream, sizeof(struct usb_stream));
+
+        uint32_t seg_size = MIN(size, USB_XFER_MAX_STREAM_SEG_SIZE);
+        usbd_edpt_xfer(usb_rhport, ep_xfer_out, src, seg_size);
+
+        // FIXME: is a irq race cond possible here between buf_tail and buf_head?
+        out_xfer_buf_tail = next_head;
+    }
+
+    out_xfer_buf_head = next_head;
+}
+
+void usb_ctl_data(void *buf, uint16_t len) {
+    assert(current_ctl_req);
+    tud_control_xfer(usb_rhport, current_ctl_req, buf, len);
+}
+
+void usb_ctl_status() {
+    assert(current_ctl_req);
+    tud_control_status(usb_rhport, current_ctl_req);
 }
 
 /* clang-format off */
