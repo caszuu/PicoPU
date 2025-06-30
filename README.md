@@ -14,6 +14,6 @@ Monorepo subprojects:
 		- `mockbird/` - RPi Pico 2 (mocking bird) arch firmware
 - `pdrv/` - a user-space host-side driver written in go
 	- `bench/` - an example application using directly `pdrv` apis
-- `boards/` - hardware board design
-	- `RP2350A_chip_board/` - board files for the shader chip
-	- `RP2350B_chip_board/` - board files for the broker chip
+- `boards/` - EasyEDA Std design files
+	- `broker` - Files for the Broker/Motherboard
+	- `shader` - Files for the smaller Shader boards

@@ -1,3 +1,0 @@
-(fp_lib_table
-  (lib (name "RP2350A_chip_board")(type "KiCad")(uri "${KIPRJMOD}/RP2350A_chip_board.pretty")(options "")(descr ""))
-)
