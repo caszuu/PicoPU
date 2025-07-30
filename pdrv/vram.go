@@ -25,25 +25,33 @@ type VramRange struct {
 	Offset VramSize
 }
 
-// VramHeap Descriptor //
-
-type VramHeap struct {
-	heapSize         VramSize
-	heapRowAlignment VramSize
-
-	heapCaps VramHeapCaps
-
-	refC atomic.Int32
+type VramRes struct {
+	VramRange
+	Alloc *VramAlloc
 }
 
-func (h *VramHeap) destroyHeap() {
-	if h.refC.Load() != 0 {
-		slog.Error("destroyed heap which is still in use! not all heap allocators we're destroyed")
+func ResAll(alloc *VramAlloc) VramRes {
+	return VramRes{VramRange{Size: alloc.Size()}, alloc}
+}
+
+func ResRange(alloc *VramAlloc, size VramSize, offset VramSize) (VramRes, error) {
+	if size+offset > alloc.Size() {
+		return VramRes{}, errors.New("out of bounds")
 	}
+
+	return VramRes{VramRange{size, offset}, alloc}, nil
 }
 
-func (h *VramHeap) Size() VramSize {
-	return h.heapSize
+func (res VramRes) Addr() VramAddr {
+	if !res.Valid() {
+		return 0 // FIXME: should be an error or panic
+	}
+
+	return res.Alloc.Addr() + VramAddr(res.Offset)
+}
+
+func (res VramRes) Valid() bool {
+	return res.Alloc != nil
 }
 
 // Staging buffers //

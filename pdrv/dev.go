@@ -10,6 +10,8 @@ import (
 )
 
 type Device struct {
+	arch DeviceArch
+
 	// usb sub-system
 	usbDev       *gousb.Device
 	usbItfDoneCb func()
@@ -88,26 +90,7 @@ func InitDevice() (*Device, error) {
 		return nil, err
 	}
 
-	// match device hwinfo
-
-	hwinfo, err := dev.CtlQueryHwInfo()
-	if err != nil {
-		return nil, err
-	}
-
-	archStr := string(hwinfo.HwArch[:])
-
-	switch archStr {
-	case "mock\x00\x00\x00\x00":
-		err = dev.initMockingArch()
-
-	case "ravn\x00\x00\x00\x00":
-		err = dev.initRavenArch()
-
-	default:
-		return nil, fmt.Errorf("unknown HwArch \"%s\"", archStr)
-	}
-
+	err = dev.initArch()
 	if err != nil {
 		return nil, err
 	}
@@ -308,8 +291,8 @@ func (dev *Device) SubmitEnqueue(cb *Cmdbuf) error {
 	// submit
 
 	scmd := enqueueScmd{
-		ctype:      scmdEnqueue,
-		cmdbufAddr: cb.bufAlloc.allocAddr,
+		Ctype:      scmdEnqueue,
+		CmdbufAddr: cb.bufAlloc.allocAddr,
 	}
 
 	buf := make([]byte, 64)

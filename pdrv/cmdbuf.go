@@ -5,7 +5,7 @@ import (
 	"errors"
 )
 
-/* cmdbuf sub-system */
+// cmdbuf sub-system //
 
 type CmdbufState int
 
@@ -20,11 +20,7 @@ type Cmdbuf struct {
 	device *Device
 
 	// host-side
-	encBuf   []byte
-	encCount int
-
-	encPendingXfers map[uint8][]byte
-	nextXferIdx     uint8
+	encBuf []byte
 
 	// device-side
 	bufAlloc *VramAlloc
@@ -36,59 +32,28 @@ func (dev *Device) NewCmdbuf() *Cmdbuf {
 		device: dev,
 
 		encBuf:   make([]byte, 0),
-		encCount: 0,
 		bufAlloc: nil,
-
-		encPendingXfers: make(map[uint8][]byte),
-		nextXferIdx:     0,
 	}
 }
 
-func (cb *Cmdbuf) Destroy() error {
+func (cb *Cmdbuf) Encode() CmdEncoder {
+	return cb.device.arch.newEncoder(cb)
+}
+
+func (cb *Cmdbuf) Destroy() {
 	if cb.state == CmdbufRecording {
-		return nil // host-only, no need to dealloc
+		return // host-only, no need to dealloc
 	}
 
-	if cb.state == CmdbufPending {
-		return errors.New("can't destroy, cmdbuf is pending")
-	}
+	// TODO: drv warn on in-use destroy
+	// if cb.state == CmdbufPending {
+	// 	fmt.Println("cmdbuf destroyed while in-use")
+	// }
 
 	cb.bufAlloc.Free()
-
-	return nil
 }
 
-func (cb *Cmdbuf) DumpBuf() []byte {
-	return cb.encBuf
-}
-
-func (cb *Cmdbuf) Finalize(valloc *VramHeapScope) error {
-	// validate and finalize
-
-	if cb.state != CmdbufRecording {
-		return errors.New("cmdbuf is not in a recording state")
-	}
-
-	cb.appendCmd(uint32(0)) // mark end of cmdbuf
-
-	// xfer
-
-	var err error
-	cb.bufAlloc, err = valloc.Alloc(VramSize(len(cb.encBuf)))
-	if err != nil {
-		return err
-	}
-
-	err = cb.device.SubmitXferToDevice(cb.encBuf, cb.bufAlloc, 0)
-	if err != nil {
-		return err
-	}
-
-	cb.state = CmdbufReady
-	return nil
-}
-
-// cmd recording helpers
+// cmd encording helpers
 
 func (cb *Cmdbuf) ensureRec() error {
 	if cb.state != CmdbufRecording {
@@ -96,14 +61,6 @@ func (cb *Cmdbuf) ensureRec() error {
 	}
 
 	return nil
-}
-
-func (cb *Cmdbuf) queueXfer(hbuf []byte) uint8 {
-	idx := cb.nextXferIdx
-	cb.nextXferIdx += 1
-
-	cb.encPendingXfers[idx] = hbuf
-	return idx
 }
 
 func (cb *Cmdbuf) appendCmd(cmd any) error {
@@ -122,5 +79,29 @@ func (cb *Cmdbuf) appendInlineData(hbuf []byte) error {
 	}
 
 	cb.encBuf = append(cb.encBuf, hbuf...)
+	return nil
+}
+
+func (cb *Cmdbuf) xferFinalized() error {
+	// validate
+
+	if cb.state != CmdbufRecording {
+		return errors.New("cmdbuf is not in a recording state")
+	}
+
+	// xfer
+
+	var err error
+	cb.bufAlloc, err = cb.device.AllocVram(VramSize(len(cb.encBuf)), HeapCapXferOps)
+	if err != nil {
+		return err
+	}
+
+	err = cb.device.SubmitXferToDevice(cb.encBuf, cb.bufAlloc, 0)
+	if err != nil {
+		return err
+	}
+
+	cb.state = CmdbufReady
 	return nil
 }
