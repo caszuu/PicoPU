@@ -112,6 +112,8 @@ func InitDevice() (*Device, error) {
 		return nil, err
 	}
 
+	go dev.readbackDaemon()
+
 	return dev, nil
 }
 
@@ -138,69 +140,28 @@ func (dev *Device) AllocVram(size VramSize, caps VramHeapCaps) (*VramAlloc, erro
 	return nil, errors.New("no heaps with required caps found")
 }
 
-// low-level xfers
+// low-level xfers //
 
 func (dev *Device) rawWriteOut(buf []byte) (int, error) {
-	dev.usbMu.Lock()
-	defer dev.usbMu.Unlock()
+	dev.outMu.Lock()
+	defer dev.outMu.Unlock()
 
 	return dev.xferOut.Write(buf)
 }
 
-func (dev *Device) rawReadIn(buf []byte) (int, error) {
-	dev.usbMu.Lock()
-	defer dev.usbMu.Unlock()
-
-	return dev.xferIn.Read(buf)
-}
-
-func (dev *Device) setupOutXfer(setup_cmd []byte) (*gousb.WriteStream, error) {
-	// dev.usbMu.Lock()
-	// defer dev.usbMu.Unlock()
-
-	_, err := dev.xferOut.Write(setup_cmd)
-	if err != nil {
-		return nil, err
-	}
-
-	return dev.xferOut.NewStream(512, 4)
-}
-
-func (dev *Device) setupInXfer() (*gousb.ReadStream, error) {
-	// dev.usbMu.Lock()
-	// defer dev.usbMu.Unlock()
-
-	return dev.xferIn.NewStream(512, 4)
-}
-
-// queue submits
-
-// TODO: make non-blocking, probably just put UsbStream into a goroutine
-func (dev *Device) SubmitXferToDevice(hbuf []byte, dst *VramAlloc, offset VramSize) error {
-	// validate
-
-	if err := validateXfer(hbuf, dst, offset); err != nil {
-		return err
-	}
-
-	if dst.Caps()&HeapCapXferOps == 0 {
-		return errors.New("missing xfer vram capability")
-	}
-
-	// submit
-
+func (dev *Device) submitDeviceXfer(hbuf []byte, addr VramAddr) error {
 	scmd := xferFromHostScmd{
-		ctype: scmdXferToDevice,
+		Ctype: scmdXferToDevice,
 
-		xferSize: uint32(len(hbuf)),
-		vramAddr: dst.allocAddr,
+		XferSize: uint32(len(hbuf)),
+		VAddr:    addr,
 	}
 
 	buf := make([]byte, 64)
 	cmdSize, _ := binary.Encode(buf, binary.LittleEndian, scmd)
 
-	dev.usbMu.Lock()
-	defer dev.usbMu.Unlock()
+	dev.outMu.Lock()
+	defer dev.outMu.Unlock()
 
 	// TODO: for some reason gousb WriteStreams behave incorectly with usbd streams (often duplicating data for no apparent reason)
 	// s, err := dev.setupOutXfer(buf[:cmdSize])
@@ -216,11 +177,127 @@ func (dev *Device) SubmitXferToDevice(hbuf []byte, dst *VramAlloc, offset VramSi
 	// return s.Close()
 
 	dev.xferOut.Write(buf[:cmdSize])
-	dev.xferOut.Write(hbuf)
+
+	toWrite := len(hbuf)
+	for toWrite != 0 {
+		segSize := min(toWrite, 512)
+		written, err := dev.xferOut.Write(hbuf[:segSize])
+		if err != nil {
+			return err
+		}
+
+		hbuf = hbuf[written:]
+		toWrite -= written
+	}
+
 	return nil
 }
 
-// TODO: mark cmdbuf as pending and fence sync
+func (dev *Device) readSync(pakBuf []byte) {
+	var pak signalScmd
+	_, _ = binary.Decode(pakBuf, binary.LittleEndian, &pak)
+
+	f, ok := dev.fences[pak.SyncIdx]
+	if !ok {
+		panic(fmt.Errorf("device lost: invalid fence %d", pak.SyncIdx))
+	}
+
+	f.signal()
+}
+
+func (dev *Device) readXfer(pakBuf []byte, rs *gousb.ReadStream) {
+	var pak xferFromDeviceScmd
+	_, _ = binary.Decode(pakBuf, binary.LittleEndian, &pak)
+
+	dev.stagingMu.Lock()
+	staging, ok := dev.stagings[pak.StagingIdx]
+	dev.stagingMu.Unlock()
+
+	if !ok {
+		panic(fmt.Errorf("device lost: invalid staging %d", 0))
+	}
+
+	switch pak.Ctype {
+	case scmdXferToDevice:
+		err := dev.submitDeviceXfer(staging, pak.VAddr)
+		if err != nil {
+			panic(fmt.Errorf("device lost: xfer failed: %v", err))
+		}
+
+	case scmdXferToHost:
+		read := 0
+
+		if len(staging) < int(pak.XferSize) {
+			panic(fmt.Errorf("device lost: staging overflow: %d < %d", len(staging), pak.XferSize))
+		}
+
+		for read != int(pak.XferSize) {
+			c, err := rs.Read(pakBuf)
+			if err != nil {
+				panic(fmt.Errorf("device lost: xfer failed: %v", err))
+			}
+
+			copy(staging[read:read+c], pakBuf[:c])
+			read += c
+		}
+
+	default:
+		panic(fmt.Errorf("device lost: invalid scmd: %d", pak.Ctype))
+	}
+}
+
+func (dev *Device) readbackDaemon() {
+	pakBuf := make([]byte, 512)
+	rs, err := dev.xferIn.NewStream(512, 4)
+
+	if err != nil {
+		panic(fmt.Errorf("device lost: failed setting up readback stream: %v", err))
+	}
+
+	for {
+		c, err := rs.Read(pakBuf)
+		if err != nil {
+			panic(fmt.Errorf("device lost: readback failed: %v", err))
+		}
+
+		var pakType scmdType
+		_, err = binary.Decode(pakBuf, binary.LittleEndian, &pakType)
+
+		switch pakType {
+		case scmdSignal:
+			dev.readSync(pakBuf[:c])
+
+		case scmdXferToDevice:
+			dev.readXfer(pakBuf[:c], rs)
+
+		case scmdXferToHost:
+			dev.readXfer(pakBuf[:c], rs)
+
+		default:
+			panic(fmt.Errorf("device lost: invalid scmd %d", pakType))
+		}
+	}
+}
+
+// queue submits //
+
+// TODO: make non-blocking, probably just put UsbStream into a goroutine
+func (dev *Device) SubmitXferToDevice(hbuf []byte, dst *VramAlloc, offset VramSize) error {
+	// validate
+
+	// FIXME: standard validate
+	// if err := validateXfer(hbuf, dst, offset); err != nil {
+	// 	return err
+	// }
+
+	if dst.Caps()&HeapCapXferOps == 0 {
+		return errors.New("missing xfer vram capability")
+	}
+
+	// submit
+	return dev.submitDeviceXfer(hbuf, dst.Addr()+VramAddr(offset))
+}
+
 func (dev *Device) SubmitEnqueue(cb *Cmdbuf) error {
 	// validate
 
