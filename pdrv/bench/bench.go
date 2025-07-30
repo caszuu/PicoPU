@@ -3,12 +3,12 @@ package main
 import (
 	"encoding/binary"
 	"flag"
+	"fmt"
 	"log"
 	"time"
 
 	"github.com/caszuu/PicoPu/pdrv"
 	"github.com/go-gl/mathgl/mgl32"
-	"github.com/google/gousb"
 )
 
 var (
@@ -16,6 +16,7 @@ var (
 	res_h = flag.Uint("h", 240, "framebuffer height resolution")
 
 	objPath   = flag.String("m", "cube.obj", "model file path")
+	texPath   = flag.String("t", "cube.png", "image file path")
 	ledMode   = flag.Uint("lm", 1, "led mode (0 - off; 1 - rainbow; 2 - audio reactive)")
 	ledBright = flag.Float64("lb", .1, "led brightness (0.0 to 1.0)")
 )
@@ -27,66 +28,25 @@ var (
 
 // a tiny test model viewer directly using pdrv
 
-type gcsGstate struct {
-	vbuf pdrv.VramAddr
-	ibuf pdrv.VramAddr
-	fbC0 pdrv.VramAddr
-	fbZs pdrv.VramAddr
-
-	fbExtent [2]uint16
-	viewport [3][2]float32
-
-	rasterMode byte
-}
-
-func allocFramebuffer(valloc *pdrv.VramHeapScope) (*pdrv.VramAlloc, pdrv.VramAddr, pdrv.VramAddr, error) {
+func allocFramebuffer(dev *pdrv.Device) (*pdrv.VramAlloc, pdrv.VramRes, pdrv.VramRes, pdrv.VramRes, error) {
 	fbCSize := pdrv.VramSize(*res_w * *res_h * 2)
 	fbZsSize := pdrv.VramSize(*res_w * *res_h * 2)
 
 	log.Printf("wh: %d %d c0: %d c1: %d zs: %d", *res_w, *res_h, fbCSize, fbCSize, fbZsSize)
 
-	fb, err := valloc.Alloc(fbCSize + fbCSize + fbZsSize)
+	fb, err := dev.AllocVram(fbCSize+fbCSize+fbZsSize, pdrv.HeapCapFbOps)
 	if err != nil {
-		return nil, 0, 0, err
+		return nil, pdrv.VramRes{}, pdrv.VramRes{}, pdrv.VramRes{}, err
 	}
 
-	return fb, pdrv.VramAddr(fbCSize), pdrv.VramAddr(fbCSize + fbCSize), nil
+	fbC0, _ := pdrv.ResRange(fb, fbCSize, 0)
+	fbC1, _ := pdrv.ResRange(fb, fbCSize, fbCSize)
+	fbZs, _ := pdrv.ResRange(fb, fbZsSize, fbCSize*2)
+
+	return fb, fbC0, fbC1, fbZs, nil
 }
 
-func setupGstate(cb *pdrv.Cmdbuf, vbuf pdrv.VramAddr, ibuf pdrv.VramAddr, fb *pdrv.VramAlloc, zsOffset pdrv.VramAddr, cOffset pdrv.VramAddr) {
-	buf := make([]byte, 128)
-
-	offset := [2]uint{0, 0}
-	extent := [2]uint{*res_w, *res_h}
-
-	gstate := gcsGstate{
-		vbuf: vbuf,
-		ibuf: ibuf,
-		fbC0: fb.Addr() + cOffset,
-		fbZs: fb.Addr() + zsOffset,
-
-		fbExtent:   [2]uint16{uint16(extent[0]), uint16(extent[1])},
-		rasterMode: 3, // trig_fill
-
-		viewport: [3][2]float32{
-			{float32(extent[0]) / 2, float32(offset[0]) + float32(extent[0])/2},
-			{float32(extent[1]) / 2, float32(offset[1]) + float32(extent[1])/2},
-			{1, 0},
-		},
-	}
-
-	gsSize, err := binary.Encode(buf, binary.LittleEndian, gstate)
-	if err != nil {
-		panic(err)
-	}
-
-	err = cb.CmdPushGstate(buf[:(gsSize+3)&^3], 0)
-	if err != nil {
-		log.Fatalln("failed to push gstate:", err)
-	}
-}
-
-func updateUniforms(dev *pdrv.Device, unif *pdrv.VramAlloc) {
+func updateUniforms(dev *pdrv.Device, unif *pdrv.VramAlloc, tex *Texture) {
 	// update cbuf data (following the demo_cbuf layout)
 
 	mq := mgl32.AnglesToQuat(rotX, rotY, 0, mgl32.XYZ)
@@ -94,17 +54,23 @@ func updateUniforms(dev *pdrv.Device, unif *pdrv.VramAlloc) {
 	m := mgl32.Scale3D(.5, .5, .5)
 	m = m.Mul4(mq.Mat4())
 
-	nm := mgl32.Ident4()
+	nm := mq.Mat4()
 
 	buf := make([]byte, 0)
 	buf, _ = binary.Append(buf, binary.LittleEndian, m)
 	buf, _ = binary.Append(buf, binary.LittleEndian, nm)
-	buf, _ = binary.Append(buf, binary.LittleEndian, mgl32.Vec4{-1, -1, -1}.Normalize())
-	buf, _ = binary.Append(buf, binary.LittleEndian, mgl32.Vec4{.8, .2, .8})
+	buf, _ = binary.Append(buf, binary.LittleEndian, mgl32.Vec4{-1, -1.5, -.5}.Normalize())
+
+	buf, err := binary.Append(buf, binary.LittleEndian, tex.Extent())
+	buf, _ = binary.Append(buf, binary.LittleEndian, tex.Addr())
+
+	if err != nil {
+		panic(err)
+	}
 
 	// stage cbuf data
 
-	err := dev.SubmitXferToDevice(buf, unif, 0)
+	err = dev.SubmitXferToDevice(buf, unif, 0)
 	if err != nil {
 		log.Fatalln("failed to stage cbuf:", err)
 	}
@@ -116,10 +82,7 @@ func main() {
 
 	// setup device
 
-	usbCtx := gousb.NewContext()
-	defer usbCtx.Close()
-
-	dev, err := pdrv.InitDevice(usbCtx)
+	dev, err := pdrv.InitDevice()
 	if err != nil {
 		log.Fatalln("failed to init device:", err)
 	}
@@ -136,71 +99,108 @@ func main() {
 		log.Fatalln("invalid led mode")
 	}
 
-	valloc, err := dev.CreateHeapScope(0)
-	if err != nil {
-		log.Fatalln("failed to create a heap scope:", err)
-	}
-
 	// setup device bufs
 
-	fb, c1Offset, zsOffset, err := allocFramebuffer(valloc)
+	fb, c0Res, c1Res, zsRes, err := allocFramebuffer(dev)
 	if err != nil {
 		log.Fatalln("failed to alloc fb:", err)
 	}
 	defer fb.Free()
 
-	m, err := loadModelFile(dev, valloc, *objPath)
+	m, err := loadModelFile(dev, *objPath)
 	if err != nil {
 		log.Fatalln("failed to load model:", err)
 	}
 	defer m.Destroy()
 
-	unifSize := pdrv.VramSize((16*2 + 4*2) * 4)
-	unif, err := valloc.Alloc(unifSize)
+	tex, err := loadTexture(dev, *texPath)
+	if err != nil {
+		log.Fatalln("failed to load texture:", err)
+	}
+	defer tex.Destroy()
+
+	unifSize := pdrv.VramSize((16*2 + 4*2 + 2 + 1) * 4)
+	unif, err := dev.AllocVram(unifSize, pdrv.HeapCapShaderOps|pdrv.HeapCapXferOps)
 	if err != nil {
 		log.Fatalln("failed to alloc uniform buf:", err)
 	}
 	defer unif.Free()
+	unifRes := pdrv.ResAll(unif)
+
+	a, err := dev.AllocVram(8*1024, pdrv.HeapCapShaderOps|pdrv.HeapCapXferOps)
+	if err != nil {
+		log.Fatalln("nope:", err)
+	}
+	defer a.Free()
 
 	// record frame cmdbuf
 
-	cb := dev.NewCmdbuf()
-
-	setupGstate(cb, m.VbufAddr(), m.IbufAddr(), fb, zsOffset, 0)
-	cb.CmdWriteCbuf(unif, 0, pdrv.VramRange{Size: unifSize, Offset: 0})
-	cb.CmdClear()
-
-	m.Draw(cb)
-	cb.CmdPresent()
-
-	setupGstate(cb, m.VbufAddr(), m.IbufAddr(), fb, zsOffset, c1Offset)
-	cb.CmdClear()
-
-	m.Draw(cb)
-	cb.CmdPresent()
-
-	if err := cb.Finalize(valloc); err != nil {
-		log.Fatalln("failed to finalize cmdbuf:", err)
+	f, err := dev.NewFence()
+	if err != nil {
+		log.Fatalln("failed to alloc frame fence:", err)
 	}
-	defer cb.Destroy()
+	defer f.Destroy()
 
 	// frame loop
+
+	frameIndex := 0
 
 	for {
 		// update anim
 
-		rotX += .05
-		rotY += .05
+		rotX += .0125 * 2
+		rotY += .025 * 2
+
+		updateUniforms(dev, unif, tex)
+
+		// encode frame
+
+		cb := dev.NewCmdbuf()
+
+		{
+			enc := cb.Encode()
+
+			var cRes pdrv.VramRes
+			if frameIndex%2 == 0 {
+				cRes = c0Res
+			} else {
+				cRes = c1Res
+			}
+
+			enc.SetViewport(0, 0, 320, 240)
+			enc.BindFramebuffer([2]int{320, 240}, cRes, zsRes)
+			enc.BindVertexBuffer(m.Vbuf(), m.Ibuf())
+
+			enc.Clear()
+			enc.WriteConstants(unifRes, 0)
+
+			m.Draw(enc)
+			enc.Present()
+
+			enc.SignalFence(f)
+
+			if err := enc.Finalize(); err != nil {
+				log.Fatalln("failed to finalize cmdbuf:", err)
+			}
+		}
 
 		// submit frame
 
-		updateUniforms(dev, unif)
+		startTime := time.Now().UnixMicro()
 
 		err = dev.SubmitEnqueue(cb)
 		if err != nil {
 			log.Fatalln("failed to submit frame:", err)
 		}
 
-		time.Sleep(time.Millisecond * 30)
+		f.Wait()
+		f.Reset()
+
+		cb.Destroy()
+
+		ft := time.Now().UnixMicro() - startTime
+		fmt.Printf("  frame time: %d.%dms \r", ft/1000, ft%1000)
+
+		frameIndex += 1
 	}
 }
