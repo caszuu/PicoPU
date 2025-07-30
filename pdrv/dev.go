@@ -11,19 +11,31 @@ import (
 
 type Device struct {
 	// usb sub-system
-	usbMu        sync.Mutex
 	usbDev       *gousb.Device
 	usbItfDoneCb func()
 
+	outMu   sync.Mutex
 	xferOut *gousb.OutEndpoint
-	xferIn  *gousb.InEndpoint
+
+	xferIn *gousb.InEndpoint
 
 	// vram sub-sys
-	vramMu         sync.Mutex
-	availableHeaps []VramHeap
+	availableHeaps []*VramHeap
+
+	stagingMu      sync.Mutex
+	stagings       map[uint16][]byte
+	nextStagingIdx uint16
+
+	// sync sub-sys
+	syncMu sync.Mutex
+
+	fences       map[uint16]*Fence
+	nextFenceIdx uint16
 }
 
-func (dev *Device) initDeviceUsb(ctx *gousb.Context) error {
+func (dev *Device) initDeviceUsb() error {
+	ctx := gousb.NewContext()
+
 	// usb device
 
 	usbDev, err := ctx.OpenDeviceWithVIDPID(0xcafe, 0x4000)
@@ -62,10 +74,16 @@ func (dev *Device) initDeviceUsb(ctx *gousb.Context) error {
 	return nil
 }
 
-func InitDevice(ctx *gousb.Context) (*Device, error) {
-	dev := &Device{}
+func InitDevice() (*Device, error) {
+	dev := &Device{
+		stagings:       make(map[uint16][]byte),
+		nextStagingIdx: 0,
 
-	err := dev.initDeviceUsb(ctx)
+		fences:       make(map[uint16]*Fence),
+		nextFenceIdx: 0,
+	}
+
+	err := dev.initDeviceUsb()
 	if err != nil {
 		return nil, err
 	}
@@ -82,11 +100,9 @@ func InitDevice(ctx *gousb.Context) (*Device, error) {
 	switch archStr {
 	case "mock\x00\x00\x00\x00":
 		err = dev.initMockingArch()
-		break
 
 	case "ravn\x00\x00\x00\x00":
 		err = dev.initRavenArch()
-		break
 
 	default:
 		return nil, fmt.Errorf("unknown HwArch \"%s\"", archStr)
@@ -101,19 +117,25 @@ func InitDevice(ctx *gousb.Context) (*Device, error) {
 
 func (dev *Device) Destroy() {
 	for i := range dev.availableHeaps {
-		dev.availableHeaps[i].destroyHeap()
+		dev.availableHeaps[i].Destroy()
 	}
 
 	dev.usbItfDoneCb()
 	dev.usbDev.Close()
 }
 
-func (dev *Device) CreateHeapScope(heapIdx int) (*VramHeapScope, error) {
-	if heapIdx >= len(dev.availableHeaps) {
-		return nil, errors.New("out of bounds")
+// vram managment //
+
+func (dev *Device) AllocVram(size VramSize, caps VramHeapCaps) (*VramAlloc, error) {
+	for _, heap := range dev.availableHeaps {
+		if heap.heapCaps&caps != caps {
+			continue
+		}
+
+		return heap.Alloc(size)
 	}
 
-	return NewHeapScope(&dev.availableHeaps[heapIdx]), nil
+	return nil, errors.New("no heaps with required caps found")
 }
 
 // low-level xfers

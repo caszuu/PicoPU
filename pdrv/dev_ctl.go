@@ -24,9 +24,6 @@ type DevHwInfo struct {
 }
 
 func (dev *Device) CtlFlash() error {
-	dev.usbMu.Lock()
-	defer dev.usbMu.Unlock()
-
 	_, err := dev.usbDev.Control(0b00100000, uint8(devCtlFlash), 0, 0, nil)
 
 	if err == gousb.ErrorNoDevice || err == gousb.ErrorPipe {
@@ -38,9 +35,6 @@ func (dev *Device) CtlFlash() error {
 
 func (dev *Device) CtlQueryHwInfo() (DevHwInfo, error) {
 	buf := make([]byte, 64)
-
-	dev.usbMu.Lock()
-	defer dev.usbMu.Unlock()
 
 	_, err := dev.usbDev.Control(0b10100000, uint8(devCtlQueryHwInfo), 0, 0, buf)
 	if err != nil {
@@ -56,9 +50,6 @@ func (dev *Device) CtlQueryHwInfo() (DevHwInfo, error) {
 }
 
 func (dev *Device) CtlLedUpdate(ledData []byte, stripIdx uint16) error {
-	dev.usbMu.Lock()
-	defer dev.usbMu.Unlock()
-
 	_, err := dev.usbDev.Control(0b00100000, uint8(devCtlLedUpdate), stripIdx, 0, ledData)
 	return err
 }
