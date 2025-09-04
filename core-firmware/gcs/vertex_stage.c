@@ -1,19 +1,21 @@
-#include "shader.h"
+#include "unit.h"
 
 #include <chip.h>
 #include <common/ex_simd.h>
 #include <common/si_proto.h>
 
-#include <string.h>
-
 struct in_attribs {
     float pos[3];
-    float norm[3];
 };
 
 static inline void dispatch_vertex(v4f32 *v_pos, struct clip_point *out_clip, uint32_t vertex_index) {
     /* user vertex shader */
 
+    // indexed draw
+    // const uint16_t idx = ((const uint16_t *)vaddr(gs.ibuf))[vertex_index];
+    // const struct in_attribs *attribs = (const struct in_attribs *)(vaddr(gs.vbuf)) + idx;
+
+    // array draw
     const struct in_attribs *attribs = (const struct in_attribs *)(vaddr(gs.vbuf)) + vertex_index;
 
     v4f32 p = {
@@ -23,8 +25,8 @@ static inline void dispatch_vertex(v4f32 *v_pos, struct clip_point *out_clip, ui
         1.f,
     };
 
-    struct demo_cbuf *unif = (struct demo_cbuf *)cbuf;
-    p = ex_mul4(unif->view_mat, p);
+    const m4f32 *mvp = (const m4f32 *)cbuf;
+    p = ex_mul4(*mvp, p);
 
     /* vertex early post-process */
 
@@ -47,14 +49,14 @@ struct gcs_v2f_state v2f;
 void dispatch_vertex_batch(struct scs_vertex_batch *batch) {
     static const uint8_t v_count = 3;
 
-    // local: vertex index in this vertex stream; global: vertex index in the entire draw command
-    uint32_t local_vertex_index = 0, global_vertex_index = batch->index_base;
-    uint32_t output_primitive_count = 0, output_vertex_index = 0;
+    uint32_t local_vertex_index = batch->index_base;
+    uint32_t output_vertex_index = 0;
+    v2f.prim_count = 0;
 
     // accumulated shading_area between all prims
     int32_t shading_area[4] = {gs.fb_extent[0], gs.fb_extent[1], 0, 0};
 
-    for (uint32_t prim_i = 0; prim_i < batch->primitive_count; prim_i++, local_vertex_index += v_count) {
+    for (uint32_t prim_i = 0; prim_i < batch->primitive_count; prim_i++) {
         /* vertex stage */
 
         v4f32 v_positions[v_count];
@@ -63,9 +65,9 @@ void dispatch_vertex_batch(struct scs_vertex_batch *batch) {
         uint8_t v_out_codes = 0x3F;  // AND'ed viewport
         uint8_t gb_out_codes = 0x00; // OR'ed guard-band
 
-        for (uint8_t pvi = 0; pvi < v_count; global_vertex_index++, pvi++) {
+        for (uint8_t pvi = 0; pvi < v_count; local_vertex_index++, pvi++) {
             // vertex shader
-            dispatch_vertex(&v_positions[pvi], &v2f.clip_buf[output_vertex_index + pvi], local_vertex_index + pvi);
+            dispatch_vertex(&v_positions[pvi], &v2f.clip_buf[output_vertex_index + pvi], local_vertex_index);
 
             // post-shader
 
@@ -90,8 +92,8 @@ void dispatch_vertex_batch(struct scs_vertex_batch *batch) {
 
         if (gb_out_codes) {
             // prim both outside the guard-bands and inside viewport, very rare, perform slow clip
+            // FIXME: implement guard-band clipping, for now cull instead
 
-            // format_dbg("FIXME: unimplemented guard-band clipping reached, culling instead!");
             continue;
         }
 
@@ -103,18 +105,9 @@ void dispatch_vertex_batch(struct scs_vertex_batch *batch) {
 
             struct clip_point *clip = &v2f.clip_buf[output_vertex_index + pvi];
 
-            *clip = (struct clip_point){
-                .x = v_positions[pvi][0] * gs.viewport_transform_params[0][0] + gs.viewport_transform_params[0][1],
-                .y = v_positions[pvi][1] * gs.viewport_transform_params[1][0] + gs.viewport_transform_params[1][1],
-                .z = v_positions[pvi][2] * gs.viewport_transform_params[2][0] + gs.viewport_transform_params[2][1],
-            };
-
-            // min/max the shading areas
-
-            shading_area[0] = shading_area[0] < clip->x ? shading_area[0] : clip->x;
-            shading_area[1] = shading_area[1] < clip->y ? shading_area[1] : clip->y;
-            shading_area[2] = shading_area[2] > clip->x ? shading_area[2] : clip->x;
-            shading_area[3] = shading_area[3] > clip->y ? shading_area[3] : clip->y;
+            clip->x = v_positions[pvi][0] * gs.viewport_transform_params[0][0] + gs.viewport_transform_params[0][1];
+            clip->y = v_positions[pvi][1] * gs.viewport_transform_params[1][0] + gs.viewport_transform_params[1][1];
+            clip->z = v_positions[pvi][2] * gs.viewport_transform_params[2][0] + gs.viewport_transform_params[2][1];
         }
 
         /* late primitive processing */
@@ -123,13 +116,11 @@ void dispatch_vertex_batch(struct scs_vertex_batch *batch) {
         int32_t signed_area = (v2f.clip_buf[output_vertex_index + 1].x - v2f.clip_buf[output_vertex_index + 0].x) * (v2f.clip_buf[output_vertex_index + 2].y - v2f.clip_buf[output_vertex_index + 0].y) -
                               (v2f.clip_buf[output_vertex_index + 2].x - v2f.clip_buf[output_vertex_index + 0].x) * (v2f.clip_buf[output_vertex_index + 1].y - v2f.clip_buf[output_vertex_index + 0].y);
 
-        // check winding order using area (negative area == clockwise) and force counter-clockwise winding for raster stage
         if (signed_area < 0) {
-            struct clip_point temp = v2f.clip_buf[output_vertex_index + 0];
-            v2f.clip_buf[output_vertex_index + 0] = v2f.clip_buf[output_vertex_index + 1];
-            v2f.clip_buf[output_vertex_index + 1] = temp;
+            // back-face, cull
+            // TODO: add gstate ctl for face culling
 
-            signed_area = -signed_area;
+            continue;
         }
 
         if (signed_area == 0) {
@@ -137,30 +128,7 @@ void dispatch_vertex_batch(struct scs_vertex_batch *batch) {
             continue;
         }
 
-        // if (signed_area < 0) {
-        //     // back-face, cull
-        //     continue;
-        // }
-
-        output_primitive_count++;
+        v2f.prim_count++;
         output_vertex_index += v_count;
     }
-
-    // FIXME: shading_range limiting
-
-    memcpy(v2f.shading_range, shading_area, sizeof(v2f.shading_range));
-    v2f.prim_count = output_primitive_count;
-
-    struct si_dbg_packet p = {
-        .type = si_type_dbg,
-    };
-
-    // snprintf(p.dbg_message, MAX_SCS_DBG_SIZE, "vertex dbg, prim_count: %d %d %d", output_primitive_count, ((struct gcs_cbuf_state *)chip_state.cbuf)->fb_extent[0], ((struct gcs_cbuf_state *)chip_state.cbuf)->fb_extent[1]);
-    // hostbus_xfer_out(&p, sizeof(p));
-
-    // struct gcs_batch_feedback p = {gcs_type_feedback, output_primitive_count};
-    // p.c = output_primitive_count;
-    // memcpy(p.shading_range, shading_area, sizeof(v2f.shading_range));
-
-    // hostbus_xfer_out(&p, sizeof(p));
 }

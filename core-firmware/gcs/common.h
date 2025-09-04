@@ -12,8 +12,6 @@
 struct clip_point {
     int32_t x, y;
     float z;
-
-    v2f32 uv; // vertex texture coords
 };
 
 enum primitive_mode {
@@ -27,8 +25,8 @@ typedef enum primitive_mode primitive_mode_t;
 #define RASTER_TILE_SIZE 4
 #define RASTER_QUAD_SIZE 2
 
-#define MAX_VERTICES_PER_BATCH 60
-#define MAX_TRIGS_PER_BATCH (MAX_VERTICES_PER_BATCH / 3)
+#define MAX_VERTICES_PER_BATCH 32 * 3 // 96
+#define MAX_TRIGS_PER_BATCH 32
 
 /* gcs structs and intermediate buffers */
 
@@ -52,15 +50,4 @@ struct gcs_gstate {
 struct gcs_v2f_state {
     uint32_t prim_count;
     struct clip_point clip_buf[MAX_VERTICES_PER_BATCH];
-
-    int32_t shading_range[4];
-};
-
-// temp.
-struct demo_cbuf {
-    m4f32 view_mat;
-    m4f32 norm_mat;
-
-    v4f32 light_dir;
-    v4f32 col;
 };

@@ -63,12 +63,12 @@ static inline void wrap_uv_clamp(v2f32 *uv, const struct sampler_state *state) {
 /* layout-aware memory fetchers */
 
 static inline void fetch_texel_4B_linear(uint32_t texel_buf[], v2u32 texel, const struct sampler_state *state) {
-    texel_buf[0] = *(uint32_t *)(state->texture_vram_addr + (texel[0] + texel[1] * state->texture_extent[0]) * sizeof(uint32_t));
+    texel_buf[0] = *(uint32_t *)(vaddr(state->texture_vram_addr) + (texel[0] + texel[1] * state->texture_extent[0]) * sizeof(uint32_t));
 }
 
 static inline void fetch_quad_4B_linear(uint32_t texel_buf[], v2u32 texel, const struct sampler_state *state) {
     uint32_t texture_width = state->texture_extent[0];
-    uint32_t *quad_base = (uint32_t *)(state->texture_vram_addr + (texel[0] + texel[1] * texture_width) * sizeof(uint32_t));
+    uint32_t *quad_base = (uint32_t *)(vaddr(state->texture_vram_addr) + (texel[0] + texel[1] * texture_width) * sizeof(uint32_t));
 
     texel_buf[0] = *(quad_base);
     texel_buf[1] = *(quad_base + 1);
@@ -82,42 +82,5 @@ static inline void fetch_texel_4B_tiled_8x8(uint32_t texel_buf[], v2u32 texel, c
     v2u32 tile = texel >> 3;
     v2u32 local_texel = texel & 7;
 
-    texel_buf[0] = *(uint32_t *)(state->texture_vram_addr + (tile[0] + tile[1] * state->texture_extent[0] / 8) * tile_stride * sizeof(uint32_t) + (local_texel[0] + local_texel[1] * 8) * sizeof(uint32_t));
-}
-
-/* public test fetch routines */
-
-static inline uint32_t native_fetch_rgba8_nearest(v2f32 uv) {
-    struct sampler_state state = {
-        .texture_vram_addr = cbuf + 64,
-        .texture_extent = (v2u32){64, 64},
-    };
-
-    wrap_uv_clamp(&uv, &state);
-    v2u32 texel_coords = (v2u32){uv[0] * 64.f, uv[1] * 64.f};
-
-    v4u8 texel;
-    fetch_texel_4B_linear((uint32_t *)&texel, texel_coords, &state);
-
-    return (uint32_t)texel;
-}
-
-static inline uint32_t native_fetch_rgba8_bilinear(v2f32 uv) {
-    struct sampler_state state = {
-        .texture_vram_addr = cbuf + 64,
-        .texture_extent = (v2u32){64, 64},
-    };
-
-    wrap_uv_clamp(&uv, &state);
-    uv *= 64.f; // tex size normalization
-
-    v2u32 texel_coords = (v2u32){uv[0], uv[1]};
-    v2f32 interp_params = (v2f32){(uv[0] - texel_coords[0]), (uv[1] - texel_coords[1])};
-
-    // fetch
-    v4u8 texel_buf[4];
-    fetch_quad_4B_linear((uint32_t *)texel_buf, texel_coords, &state);
-
-    // filter on interp unit
-    return (uint32_t)sample_bilinear_rgba8(interp_params, texel_buf[0], texel_buf[1], texel_buf[2], texel_buf[3]);
+    texel_buf[0] = *(uint32_t *)(vaddr(state->texture_vram_addr) + (tile[0] + tile[1] * state->texture_extent[0] / 8) * tile_stride * sizeof(uint32_t) + (local_texel[0] + local_texel[1] * 8) * sizeof(uint32_t));
 }

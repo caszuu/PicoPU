@@ -4,7 +4,7 @@
 #include <common/pdrv_proto.h>
 #include <common/si_proto.h>
 #include <dvid/dvi.h>
-#include <gcs/shader.h>
+#include <gcs/unit.h>
 #include <usbd/usb.h>
 
 #include <bsp/board_api.h>
