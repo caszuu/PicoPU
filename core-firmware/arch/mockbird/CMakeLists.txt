@@ -38,10 +38,11 @@ target_link_libraries(mockbird_firmware
     hardware_watchdog
     hardware_clocks
 
-    pico_unique_id
     tinyusb_device
     tinyusb_board
 
+    pico_multicore
+    pico_unique_id
     pico_bootrom
 )
 

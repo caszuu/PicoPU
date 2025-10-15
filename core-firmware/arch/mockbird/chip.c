@@ -2,6 +2,7 @@
 
 #include <common/instru.h>
 #include <dvid/dvi.h>
+#include <hardware/clocks.h>
 #include <hardware/regs/addressmap.h>
 
 #include <hardware/dma.h>
@@ -73,7 +74,7 @@ int main() {
         .v_back_porch = 33,
         .v_active_lines = 480,
 
-        .pixel_clock_hz = 252000000 / 8,
+        .pixel_clock_hz = 25175 * KHZ,
     };
 
     dvi_modeset(&m, e_fmt_rgb565, (uint8_t *)SRAM_BASE);

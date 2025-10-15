@@ -1,7 +1,8 @@
 #include "chip.h"
 
-#include <common/instru.h>
+#include <common/mc.h>
 #include <common/pdrv_proto.h>
+#include <common/instru.h>
 #include <common/si_proto.h>
 #include <dvid/dvi.h>
 #include <gcs/unit.h>
@@ -12,10 +13,11 @@
 
 #include <hardware/gpio.h>
 #include <hardware/watchdog.h>
-
-#include <assert.h>
+#include <pico/unique_id.h>
 #include <pico/bootrom.h>
 #include <pico/stdlib.h>
+
+#include <assert.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -211,6 +213,9 @@ void init_cp_layer() {
     sleep_ms(1000);
     gpio_put(PICO_DEFAULT_LED_PIN, false);
 
+    // init shader
+    mc_init();
+
     // reset cp state
 
     queue_head = 0;
@@ -247,7 +252,7 @@ void usb_pak_in_cb(const void *p, uint16_t size) {
 
     case ucmd_type_enqueue:
         uint32_t next_head = (queue_head + 1) % CMD_QUEUE_ENTRY_COUNT;
-        assert(next_head != queue_tail); // queue overflow
+        assert(next_head != queue_tail);
 
         memcpy(queue_fifo[queue_head], p, size);
         queue_head = next_head;
@@ -286,7 +291,10 @@ bool usb_ctl_pak_cb(uint8_t req, uint16_t val, uint16_t idx, bool is_data_stage)
 
     case usb_ctl_type_hwinfo:
         struct usb_hwinfo hwi;
+
         memcpy(hwi.hwarch, "mock\0\0\0\0", 8);
+        memset(hwi.fwsha, 0, sizeof(hwi.fwsha));
+        pico_get_unique_board_id_string(hwi.hwid, sizeof(hwi.hwid));
 
         usb_ctl_data(&hwi, sizeof(hwi));
         return true;
