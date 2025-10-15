@@ -1,6 +1,6 @@
 #pragma once
 
-#include <gcs/common.h>
+#include <gcs/unit.h>
 #include <stdint.h>
 
 #define CONSTANT_BUFFER_SIZE 1024 * 4

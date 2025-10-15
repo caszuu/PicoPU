@@ -1,4 +1,4 @@
-#include "common.h"
+#include "internal.h"
 #include "sampler.h"
 
 #include <chip.h>
@@ -7,6 +7,9 @@
 
 #include <common/dma_mem.h>
 #include <common/instru.h>
+#include <common/mc.h>
+
+#include <hardware/sync.h>
 
 #include <assert.h>
 #include <math.h>
@@ -18,17 +21,7 @@
 //  - https://fgiesen.wordpress.com/2013/02/17/optimizing-sw-occlusion-culling-index/
 //  - https://fgiesen.wordpress.com/2011/07/09/a-trip-through-the-graphics-pipeline-2011-index/
 
-/* trig batch rasterizer */
-
-struct trig_params {
-    // edge function params
-    int32_t a[3], b[3], c[3];
-
-    float z[3];
-    float area_inv; // note: inverse of *double* the trigs screen-space area
-
-    int32_t culld[3];
-};
+/* rasterizer tile buffers */
 
 struct tile_slot {
     uint16_t c_tile[RASTER_TILE_SIZE * RASTER_TILE_SIZE];
@@ -46,14 +39,25 @@ struct vis_edge {
     bool pol;      // edge polarity (true == trig is now visible; false == trig is no longer visible)
 };
 
-// pull vertex-to-fragment state buffer from vertex_stage.c
-extern struct gcs_v2f_state v2f;
+static struct tile_slot slots[2];
 
-static struct trig_params trigs[MAX_TRIGS_PER_BATCH];
-static struct tile_slot slots[4];
-
+static uint32_t x_edge_count, y_edge_count;
 static struct vis_edge x_edges[MAX_TRIGS_PER_BATCH * 2];
 static struct vis_edge y_edges[MAX_TRIGS_PER_BATCH * 2];
+
+/* trig batch rasterizer */
+
+struct trig_params {
+    // edge function params
+    int32_t a[3], b[3], c[3];
+
+    float z[3];
+    float area_inv; // note: inverse of *double* the trigs screen-space area
+
+    int32_t culld[3];
+};
+
+static struct trig_params trigs[MAX_TRIGS_PER_BATCH];
 
 // trig setup //
 
@@ -96,38 +100,37 @@ static inline void insert_edge(struct vis_edge *lut, uint32_t len, struct vis_ed
     lut[i + 1] = elem;
 }
 
-static void insert_vis_edges(const struct clip_point *clips, uint32_t trig) {
-    // find bounding box edges (and align to TILE_SIZE)
-
-    uint32_t x_begin = MIN(MIN(clips[0].x, clips[1].x), clips[2].x) & ~(RASTER_TILE_SIZE - 1);
-    uint32_t x_end = (MAX(MAX(clips[0].x, clips[1].x), clips[2].x) + (RASTER_TILE_SIZE - 1)) & ~(RASTER_TILE_SIZE - 1);
-
-    uint32_t y_begin = MIN(MIN(clips[0].y, clips[1].y), clips[2].y) & ~(RASTER_TILE_SIZE - 1);
-    uint32_t y_end = (MAX(MAX(clips[0].y, clips[1].y), clips[2].y) + (RASTER_TILE_SIZE - 1)) & ~(RASTER_TILE_SIZE - 1);
-
+static inline void insert_vis_edges(uint32_t idx, int32_t x_range[2], int32_t y_range[2]) {
     // clip boxes to framebuffer extent
     // TODO: allow arbitrary extents (to allow safe parallel batch rast)
 
-    x_begin = MIN(MAX(x_begin, 0), gs.fb_extent[0] - 1);
-    x_end = MIN(MAX(x_end, 0), gs.fb_extent[0] - 1);
+    x_range[0] = MIN(MAX(x_range[0], 0), gs.fb_extent[0] - 1);
+    x_range[1] = MIN(MAX(x_range[1], 0), gs.fb_extent[0] - 1);
 
-    y_begin = MIN(MAX(y_begin, 0), gs.fb_extent[1] - 1);
-    y_end = MIN(MAX(y_end, 0), gs.fb_extent[1] - 1);
+    y_range[0] = MIN(MAX(y_range[0], 0), gs.fb_extent[1] - 1);
+    y_range[1] = MIN(MAX(y_range[1], 0), gs.fb_extent[1] - 1);
 
     // sort and insert the bbox edges into the [x,y]_edges tables
 
-    uint32_t len = trig * 2;
-    assert(len + 1 < MAX_TRIGS_PER_BATCH * 2);
+    uint32_t irq = spin_lock_blocking(locks[0]);
+    insert_edge(x_edges, x_edge_count, (struct vis_edge){x_range[0], idx, true});
+    insert_edge(x_edges, x_edge_count + 1, (struct vis_edge){x_range[1], idx, false});
 
-    insert_edge(x_edges, len, (struct vis_edge){x_begin, trig, true});
-    insert_edge(x_edges, len + 1, (struct vis_edge){x_end, trig, false});
+    assert(x_edge_count + 1 < MAX_TRIGS_PER_BATCH * 2);
+    x_edge_count += 2;
+    spin_unlock(locks[0], irq);
 
-    insert_edge(y_edges, len, (struct vis_edge){y_begin, trig, true});
-    insert_edge(y_edges, len + 1, (struct vis_edge){y_end, trig, false});
+    irq = spin_lock_blocking(locks[1]);
+    insert_edge(y_edges, y_edge_count, (struct vis_edge){y_range[0], idx, true});
+    insert_edge(y_edges, y_edge_count + 1, (struct vis_edge){y_range[1], idx, false});
+
+    assert(y_edge_count + 1 < MAX_TRIGS_PER_BATCH * 2);
+    y_edge_count += 2;
+    spin_unlock(locks[1], irq);
 }
 
 static void rast_setup_trigs() {
-    for (uint32_t i = 0; i < v2f.prim_count; i++) {
+    for (uint32_t i = get_core_num(); i < v2f.prim_count; i += 2) {
         struct trig_params *trig = &trigs[i];
         const struct clip_point *p0 = &v2f.clip_buf[i * 3 + 0];
         const struct clip_point *p1 = &v2f.clip_buf[i * 3 + 1];
@@ -143,8 +146,17 @@ static void rast_setup_trigs() {
         float one_over_trig_area = 1.f / trig_area;
         trig->area_inv = one_over_trig_area;
 
+        // comp trig screen-space bounding box ranges (and align to TILE_SIZE)
+        int32_t xr[2];
+        xr[0] = MIN(MIN(p0->x, p1->x), p2->x) & ~(RASTER_TILE_SIZE - 1);
+        xr[1] = (MAX(MAX(p0->x, p1->x), p2->x) + (RASTER_TILE_SIZE - 1)) & ~(RASTER_TILE_SIZE - 1);
+
+        int32_t yr[2];
+        yr[0] = MIN(MIN(p0->y, p1->y), p2->y) & ~(RASTER_TILE_SIZE - 1);
+        yr[1] = (MAX(MAX(p0->y, p1->y), p2->y) + (RASTER_TILE_SIZE - 1)) & ~(RASTER_TILE_SIZE - 1);
+
         // setup visibility edges
-        insert_vis_edges(p0, i);
+        insert_vis_edges(i, xr, yr);
 
         // setup z
         trig->z[0] = p0->z * one_over_trig_area;
@@ -176,10 +188,6 @@ static inline bool dispatch_frag(struct tile_slot *tile, const struct trig_param
     tile->z_tile[tile_x + tile_y * RASTER_TILE_SIZE] = iz;
 
     // frag shader
-    // tile->c_tile[tile_x + tile_y * RASTER_TILE_SIZE] = PACK_TO_RGB565(PACK_RGBA8(tile_x * 64, 0, tile_y * 64, 255));
-    // tile->c_tile[tile_x + tile_y * RASTER_TILE_SIZE] = PACK_RGBA8(w[0] / (area / 255), w[1] / (area / 255), w[2] / (area / 255), 255);
-    // float uv[2] = { trig_attrib[0][0] * wf[0] + trig_attrib[0][1] * wf[1] + trig_attrib[0][2] * wf[2], trig_attrib[1][0] * wf[0] + trig_attrib[1][1] * wf[1] + trig_attrib[1][2] * wf[2] };
-    // float uv[2] = {(tile->p[0] + tile_x) * (1.f / 640.f), (tile->p[1] + tile_y) * (1.f / 480.f)};
 
     v2f32 uv;
     if (trig_i % 1) {
@@ -319,7 +327,7 @@ static void rast_line(v2i32 p, uint32_t y_mask) {
         } else {
             // iterate tiles until edge
             for (; p[0] < e; p[0] += RASTER_TILE_SIZE) {
-                struct tile_slot *slot = &slots[0]; // TODO: slot = defer_for_free_slot();
+                struct tile_slot *slot = &slots[get_core_num()];
                 rast_tile(slot, p, x_mask);
             }
         }
@@ -345,6 +353,9 @@ static void rast_rect() {
         } else {
             // iterate rows until edge
             for (; p[1] < e; p[1] += RASTER_TILE_SIZE) {
+                if (p[1] / RASTER_TILE_SIZE % 2 != get_core_num())
+                    continue;
+
                 rast_line(p, y_mask);
             }
         }
@@ -354,29 +365,206 @@ static void rast_rect() {
     }
 }
 
-void rast_trigs() {
+void rast_trigs(void *user) {
+    if (get_core_num() == 0) {
+        x_edge_count = 0;
+        y_edge_count = 0;
+    }
+    mc_barrier();
+
     // setup rasterizer state
     rast_setup_trigs();
+    mc_barrier();
 
     // enter raster loop
     rast_rect();
+    mc_barrier();
+}
+
+/* point batch rasterizer */
+
+struct point_params {
+    v2i32 min, max;
+    uint32_t point_size;
+};
+
+static struct point_params points[MAX_TRIGS_PER_BATCH];
+
+static void rast_setup_points() {
+    for (uint32_t i = get_core_num(); i < v2f.prim_count; i += 2) {
+        struct point_params *p = &points[i];
+        const struct clip_point *pc = &v2f.clip_buf[i];
+
+        p->point_size = (uint32_t)pc->u;
+
+        p->min = (v2i32){pc->x - p->point_size, pc->y - p->point_size};
+        p->max = (v2i32){pc->x + p->point_size, pc->y + p->point_size};
+
+        // comp point tile-aligned bounding box
+        int32_t xr[2];
+        xr[0] = (p->min[0]) & ~(RASTER_TILE_SIZE - 1);
+        xr[1] = (p->max[0] + (RASTER_TILE_SIZE - 1)) & ~(RASTER_TILE_SIZE - 1);
+
+        int32_t yr[2];
+        yr[0] = (p->min[1]) & ~(RASTER_TILE_SIZE - 1);
+        yr[1] = (p->max[1] + (RASTER_TILE_SIZE - 1)) & ~(RASTER_TILE_SIZE - 1);
+
+        // setup visibility edges
+        insert_vis_edges(i, xr, yr);
+    }
+}
+
+static inline uint16_t shade_point_frag(struct tile_slot *slot, struct point_params *p, struct clip_point *clip) {
+    v4u8 c = (v4u8)PACK_RGBA8(64, 4, 4, 255);
+    float cw = clip->w;
+
+    float d = .12 * cw;
+    float f = expf(-(d * d));
+
+    v4f32 c1 = (v4f32){c[0], c[1], c[2], c[3]};
+    v4f32 c2 = (v4f32){180, 16, 16, 255};
+
+    v4f32 cf = (v4f32){f, f, f, 1} * c1 + (v4f32){(1 - f), (1 - f), (1 - f), 0} * c2;
+    c = (v4u8){cf[0], cf[1], cf[2], cf[3]};
+
+    return PACK_TO_RGB565((uint32_t)c);
+}
+
+static void rast_point(struct tile_slot *slot, uint32_t idx) {
+    struct point_params *p = &points[idx];
+    struct clip_point *c = &v2f.clip_buf[idx];
+
+    // flatshade point
+    uint16_t iz = (c->z * .5f + .5f) * UINT16_MAX;
+    uint16_t ic = shade_point_frag(slot, p, c);
+
+    int32_t y_end = MIN(slot->p[1] + RASTER_TILE_SIZE, p->max[1]);
+    int32_t x_end = MIN(slot->p[0] + RASTER_TILE_SIZE, p->max[0]);
+
+    // rasterize point
+    for (int32_t y = MAX(slot->p[1], p->min[1]); y < y_end; y++) {
+        for (int32_t x = MAX(slot->p[0], p->min[0]); x < x_end; x++) {
+            uint32_t tile_x = x % RASTER_TILE_SIZE, tile_y = y % RASTER_TILE_SIZE;
+
+            if (slot->z_tile[tile_x + tile_y * RASTER_TILE_SIZE] <= iz)
+                continue;
+
+            slot->z_tile[tile_x + tile_y * RASTER_TILE_SIZE] = iz;
+            slot->c_tile[tile_x + tile_y * RASTER_TILE_SIZE] = ic;
+        }
+    }
+}
+
+static void rast_tile_point(struct tile_slot *slot, v2i32 p, uint32_t trig_mask) {
+    *slot = (struct tile_slot){
+        .p = p,
+        .cv_mask = 0,
+        .trig_mask = trig_mask,
+    };
+
+    // read-in tile from fb (if required)
+    read_in_tile(slot);
+
+    // dispatch visible trigs (in api order)
+
+    uint32_t vis = slot->trig_mask;
+    for (uint32_t i = __builtin_ctz(vis); vis; vis &= ~(1u << i), i = __builtin_ctz(vis)) {
+        rast_point(slot, i);
+    }
+
+    // write-out tile to fb
+    write_out_tile(slot);
+}
+
+static void rast_line_points(v2i32 p, uint32_t y_mask) {
+    uint32_t x_mask = 0;
+
+    for (uint32_t xi = 0; xi < v2f.prim_count * 2; xi++) {
+        const uint32_t e = x_edges[xi].edge;
+
+        if (!(y_mask & (1u << x_edges[xi].trig))) {
+            // edge not relevant for this row, skip edge
+            continue;
+        }
+
+        if (!x_mask) {
+            // no trigs visible, skip to edge
+            p[0] = e;
+
+        } else {
+            // iterate tiles until edge
+            for (; p[0] < e; p[0] += RASTER_TILE_SIZE) {
+                struct tile_slot *slot = &slots[get_core_num()];
+                rast_tile_point(slot, p, x_mask);
+            }
+        }
+
+        // update visibility mask
+        x_mask = x_edges[xi].pol ? x_mask | (1u << x_edges[xi].trig) : x_mask & ~(1u << x_edges[xi].trig);
+    }
+}
+
+static void rast_rect_points() {
+    v2i32 p = {};
+    uint32_t y_mask = 0;
+
+    assert(v2f.prim_count <= 32);
+
+    for (uint32_t yi = 0; yi < v2f.prim_count * 2; yi++) {
+        const uint32_t e = y_edges[yi].edge;
+
+        if (!y_mask) {
+            // no trigs visible, skip to edge
+            p[1] = e;
+
+        } else {
+            // iterate rows until edge
+            for (; p[1] < e; p[1] += RASTER_TILE_SIZE) {
+                if (p[1] / RASTER_TILE_SIZE % 2 != get_core_num())
+                    continue;
+
+                rast_line_points(p, y_mask);
+            }
+        }
+
+        // update visibility mask
+        y_mask = y_edges[yi].pol ? y_mask | (1u << y_edges[yi].trig) : y_mask & ~(1u << y_edges[yi].trig);
+    }
+}
+
+void rast_points(void *user) {
+    if (get_core_num() == 0) {
+        x_edge_count = 0;
+        y_edge_count = 0;
+    }
+    mc_barrier();
+
+    // setup edges and verts
+    rast_setup_points();
+    mc_barrier();
+
+    // rasterize visible areas
+    rast_rect_points();
+    mc_barrier();
 }
 
 /* raster / fragment stage entry */
 
-void dispatch_raster_batch(struct scs_raster_batch *b) {
+void gcs_raster_batch(struct scs_raster_batch *b) {
     switch (gs.rasterizer_mode) {
     case e_prim_trig:
-        rast_trigs();
+        mc_dispatch(&rast_trigs, NULL);
+        rast_trigs(NULL);
         break;
 
         // case e_prim_line:
         //     process_lines(stream);
         //     break;
 
-        // case e_prim_point:
-        //     process_points(stream);
-        //     break;
+    case e_prim_point:
+        mc_dispatch(&rast_points, NULL);
+        rast_points(NULL);
+        break;
 
     default:
         // FIXME: fault

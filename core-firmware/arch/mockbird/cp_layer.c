@@ -128,7 +128,7 @@ static const uint32_t *cp_exec_gcs_draw(const uint32_t *cmd) {
             .index_base = vi + p->index_base,
         };
 
-        dispatch_vertex_batch(&vb);
+        gcs_vertex_batch(&vb);
 
         // raster stage
         struct scs_raster_batch rb = {
@@ -136,11 +136,10 @@ static const uint32_t *cp_exec_gcs_draw(const uint32_t *cmd) {
             .v2f_idx = 0,
         };
 
-        dispatch_raster_batch(&rb);
+        gcs_raster_batch(&rb);
     }
 
-    // note: since all cmds on mockbird are sync only, the draw_latch flag can be ignored
-    // TODO: implement indexed draws
+    // note: since all cmds on mockbird are sync by nature, the draw_latch flag can be ignored
 
     return next_cmd(p);
 }
@@ -215,6 +214,7 @@ void init_cp_layer() {
 
     // init shader
     mc_init();
+    gcs_init();
 
     // reset cp state
 
