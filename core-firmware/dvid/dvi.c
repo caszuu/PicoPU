@@ -4,6 +4,7 @@
 #include <hardware/dma.h>
 #include <hardware/gpio.h>
 #include <hardware/irq.h>
+#include <hardware/structs/dma.h>
 #include <hardware/structs/bus_ctrl.h>
 #include <hardware/structs/hstx_ctrl.h>
 #include <hardware/structs/hstx_fifo.h>
@@ -65,10 +66,16 @@ static uint32_t vactive_line[9];
 // set to set_mode.v_front_porch + set_mode.v_sync_width + set_mode.v_back_porch
 static uint32_t vblank_line_count;
 
-// ----------------------------------------------------------------------------
-// DMA logic
+// set to set_mode.h_active_pixels divided by set_mode.output_scale
+static uint32_t h_active_fb_pixels;
 
 #define DMACH_COUNT 4
+
+static dma_channel_config blank_configs[DMACH_COUNT];
+static dma_channel_config active_configs[DMACH_COUNT];
+
+// ----------------------------------------------------------------------------
+// DMA logic
 
 // As the channels chain to each other in a ring, we reconf them as they finish
 static uint32_t ch_num = 0;
@@ -84,23 +91,28 @@ static bool vactive_cmdlist_posted = false;
 static void __time_critical_func(dma_irq_handler)() {
     dma_channel_hw_t *ch = &dma_hw->ch[ch_num];
     dma_hw->intr = 1u << ch_num;
-    ch_num = (ch_num + 1) % DMACH_COUNT;
 
     if (v_scanline >= set_mode.v_front_porch && v_scanline < (set_mode.v_front_porch + set_mode.v_sync_width)) {
+        dma_channel_set_config(ch_num, &blank_configs[ch_num], false);
         ch->read_addr = (uintptr_t)vblank_line_vsync_on;
         ch->transfer_count = count_of(vblank_line_vsync_on);
     } else if (v_scanline < vblank_line_count) {
+        dma_channel_set_config(ch_num, &blank_configs[ch_num], false);
         ch->read_addr = (uintptr_t)vblank_line_vsync_off;
         ch->transfer_count = count_of(vblank_line_vsync_off);
     } else if (!vactive_cmdlist_posted) {
+        dma_channel_set_config(ch_num, &blank_configs[ch_num], false);
         ch->read_addr = (uintptr_t)vactive_line;
         ch->transfer_count = count_of(vactive_line);
         vactive_cmdlist_posted = true;
     } else {
-        ch->read_addr = (uintptr_t)&on_screen_fb[(v_scanline - vblank_line_count) * (set_mode.h_active_pixels << set_format)];
-        ch->transfer_count = (set_mode.h_active_pixels << set_format) / sizeof(uint32_t);
+        dma_channel_set_config(ch_num, &active_configs[ch_num], false);
+        ch->read_addr = (uintptr_t)&on_screen_fb[(v_scanline - vblank_line_count) / set_mode.output_scale * (h_active_fb_pixels << set_format)];
+        ch->transfer_count = set_mode.output_scale == 1 ? /*packed*/ (h_active_fb_pixels << set_format) / sizeof(uint32_t) : /*non-packed*/ h_active_fb_pixels;
         vactive_cmdlist_posted = false;
     }
+
+    ch_num = (ch_num + 1) % DMACH_COUNT;
 
     if (!vactive_cmdlist_posted) {
         v_scanline = (v_scanline + 1) % (vblank_line_count + set_mode.v_active_lines);
@@ -120,6 +132,9 @@ static void __time_critical_func(dma_irq_handler)() {
 // Main driver
 
 static void setup_hstx() {
+    uint32_t scale = set_mode.output_scale;
+    bool is_packed = scale == 1;
+
     switch (set_format) {
     case e_fmt_rgb332:
         // Configure HSTX's TMDS encoder for RGB332
@@ -134,8 +149,8 @@ static void setup_hstx() {
         // Pixels (TMDS) come in 4 8-bit chunks. Control symbols (RAW) are an
         // entire 32-bit word.
         hstx_ctrl_hw->expand_shift =
-            4 << HSTX_CTRL_EXPAND_SHIFT_ENC_N_SHIFTS_LSB |
-            8 << HSTX_CTRL_EXPAND_SHIFT_ENC_SHIFT_LSB |
+            (is_packed ? 4 : scale) << HSTX_CTRL_EXPAND_SHIFT_ENC_N_SHIFTS_LSB |
+            (is_packed ? 8 : 0) << HSTX_CTRL_EXPAND_SHIFT_ENC_SHIFT_LSB |
             1 << HSTX_CTRL_EXPAND_SHIFT_RAW_N_SHIFTS_LSB |
             0 << HSTX_CTRL_EXPAND_SHIFT_RAW_SHIFT_LSB;
 
@@ -154,8 +169,8 @@ static void setup_hstx() {
         // Pixels (TMDS) come in 2 16-bit chunks. Control symbols (RAW) are an
         // entire 32-bit word.
         hstx_ctrl_hw->expand_shift =
-            2 << HSTX_CTRL_EXPAND_SHIFT_ENC_N_SHIFTS_LSB |
-            16 << HSTX_CTRL_EXPAND_SHIFT_ENC_SHIFT_LSB |
+            (is_packed ? 2 : scale) << HSTX_CTRL_EXPAND_SHIFT_ENC_N_SHIFTS_LSB |
+            (is_packed ? 16 : 0) << HSTX_CTRL_EXPAND_SHIFT_ENC_SHIFT_LSB |
             1 << HSTX_CTRL_EXPAND_SHIFT_RAW_N_SHIFTS_LSB |
             0 << HSTX_CTRL_EXPAND_SHIFT_RAW_SHIFT_LSB;
 
@@ -174,7 +189,7 @@ static void setup_hstx() {
         // Both pixels (TMDS) and control symbols (RAW) come in as
         // entire 32-bit words.
         hstx_ctrl_hw->expand_shift =
-            1 << HSTX_CTRL_EXPAND_SHIFT_ENC_N_SHIFTS_LSB |
+            (is_packed ? 1 : scale) << HSTX_CTRL_EXPAND_SHIFT_ENC_N_SHIFTS_LSB |
             0 << HSTX_CTRL_EXPAND_SHIFT_ENC_SHIFT_LSB |
             1 << HSTX_CTRL_EXPAND_SHIFT_RAW_N_SHIFTS_LSB |
             0 << HSTX_CTRL_EXPAND_SHIFT_RAW_SHIFT_LSB;
@@ -225,6 +240,7 @@ static void setup_hstx() {
     // setup hstx commands from modeset
 
     vblank_line_count = set_mode.v_front_porch + set_mode.v_sync_width + set_mode.v_back_porch;
+    h_active_fb_pixels = set_mode.h_active_pixels / set_mode.output_scale;
 
     uint32_t vsync_off[] = {
         HSTX_CMD_RAW_REPEAT | set_mode.h_front_porch,
@@ -284,13 +300,36 @@ static void setup_dma() {
             count_of(vblank_line_vsync_off),
             false);
 
+        blank_configs[i] = c;
+
+        // check if scaling is enabled and adjust xfer size
+        // to only transfer one pixel per transfer (required for hstx scaling)
+        if (set_mode.output_scale != 1) {
+            dma_channel_transfer_size_t s;
+            switch (set_format) {
+            case e_fmt_rgb332:
+                s = DMA_SIZE_8;
+                break;
+
+            case e_fmt_rgb565:
+                s = DMA_SIZE_16;
+                break;
+
+            case e_fmt_rgbx8888:
+                s = DMA_SIZE_32;
+                break;
+            }
+
+            channel_config_set_transfer_data_size(&c, s);
+        }
+        active_configs[i] = c;
+
         dma_hw->ints0 |= (1u << i);
         dma_hw->inte0 |= (1u << i);
     }
 
     irq_set_exclusive_handler(DMA_IRQ_0, dma_irq_handler);
     irq_set_enabled(DMA_IRQ_0, true);
-    // irq_set_priority(DMA_IRQ_0, 4);
 
     bus_ctrl_hw->priority = BUSCTRL_BUS_PRIORITY_DMA_W_BITS | BUSCTRL_BUS_PRIORITY_DMA_R_BITS;
 
@@ -304,6 +343,9 @@ void dvi_modeset(struct dvi_mode *modeset, enum dvi_format fmt, uint8_t *initial
 
     set_mode = *modeset;
     set_format = fmt;
+
+    if (set_mode.output_scale == 0)
+        set_mode.output_scale = 1;
 
     on_screen_fb = initial_fb;
     on_flip_fb = NULL;
@@ -338,8 +380,8 @@ void dvi_reclock() {
     // get current system clock
     uint32_t sys_hz = clock_get_hz(clk_sys);
 
-    uint32_t bit_hz = set_mode.pixel_clock_hz * 8; // 8 bits per px
-    uint32_t hstx_hz = bit_hz / 2;                 // ddr
+    uint32_t bit_hz = set_mode.pixel_clock_hz * 10; // 10 bits per px
+    uint32_t hstx_hz = bit_hz / 2;                  // ddr
 
     clock_configure(
         clk_hstx,

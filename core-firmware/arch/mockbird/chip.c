@@ -75,6 +75,7 @@ int main() {
         .v_active_lines = 480,
 
         .pixel_clock_hz = 25175 * KHZ,
+        .output_scale = 2,
     };
 
     dvi_modeset(&m, e_fmt_rgb565, (uint8_t *)SRAM_BASE);

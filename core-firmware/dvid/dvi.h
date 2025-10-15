@@ -18,6 +18,13 @@ struct dvi_mode {
 
     // TODO: support sync polarity, currently both are assumed to be negative
     bool h_sync_polarity, v_sync_polarity;
+
+    // basic support for on-the-fly integer scaling
+    // when scaled, the dvid will assume the fb is _active_pixels|lines divided by the scale value
+    // (eg. 640x480 with 2x scale == 320x240 fb)
+    // 
+    // set to 0 or 1 to disable scaling (more efficient), max scale is 16
+    uint32_t output_scale;
 };
 
 enum dvi_format {
