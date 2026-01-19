@@ -2,12 +2,10 @@
 #include "sampler.h"
 
 #include <chip.h>
-#include <common/ex_simd.h>
-#include <common/si_proto.h>
 
-#include <common/dma_mem.h>
-#include <common/instru.h>
-#include <common/mc.h>
+#include <util/si_proto.h>
+#include <util/u_mc.h>
+#include <util/u_simd.h>
 
 #include <hardware/sync.h>
 

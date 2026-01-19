@@ -2,9 +2,9 @@
 
 #include "unit.h"
 
-#include <common/ex_simd.h>
 #include <hardware/sync.h>
 #include <stdint.h>
+#include <util/u_simd.h>
 
 /* common types */
 

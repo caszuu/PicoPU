@@ -1,9 +1,8 @@
 #include "internal.h"
 
 #include <chip.h>
-#include <common/ex_simd.h>
-#include <common/mc.h>
-#include <common/si_proto.h>
+#include <util/u_mc.h>
+#include <util/u_simd.h>
 
 #include <hardware/sync.h>
 
@@ -233,12 +232,12 @@ void gcs_vertex_batch(struct scs_vertex_batch *batch) {
 
     switch (gs.rasterizer_mode) {
     case e_prim_trig:
-        mc_dispatch((void(*))&proc_trigs, batch);
+        mc_dispatch((void(*)) & proc_trigs, batch);
         proc_trigs(batch);
         break;
 
     case e_prim_point:
-        mc_dispatch((void(*))&proc_points, batch);
+        mc_dispatch((void(*)) & proc_points, batch);
         proc_points(batch);
         break;
 

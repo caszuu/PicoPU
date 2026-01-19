@@ -95,7 +95,9 @@
 #define CFG_TUD_ENDPOINT0_SIZE    64
 #endif
 
-#define CFG_USB_XFER_EP_SIZE     64
+// #ifndef CFG_PF_XFER_EP_SIZE
+// #define CFG_USB_XFER_EP_SIZE     64
+// #endif
 
 #ifdef __cplusplus
  }

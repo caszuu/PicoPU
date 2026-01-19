@@ -1,21 +1,21 @@
 #include "chip.h"
 
-#include <common/mc.h>
-#include <common/pdrv_proto.h>
-#include <common/instru.h>
-#include <common/si_proto.h>
 #include <dvid/dvi.h>
 #include <gcs/unit.h>
 #include <usbd/usb.h>
+
+#include <util/pdrv_proto.h>
+#include <util/si_proto.h>
+#include <util/u_mc.h>
 
 #include <bsp/board_api.h>
 #include <tusb.h>
 
 #include <hardware/gpio.h>
 #include <hardware/watchdog.h>
-#include <pico/unique_id.h>
 #include <pico/bootrom.h>
 #include <pico/stdlib.h>
+#include <pico/unique_id.h>
 
 #include <assert.h>
 #include <stdint.h>

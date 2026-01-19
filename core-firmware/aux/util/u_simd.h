@@ -29,7 +29,7 @@ typedef float m4f32 __attribute__((vector_size(4 * 4 * sizeof(float))));
 
 /* clang-format off */
 
-static inline v4f32 ex_mul4(m4f32 a, v4f32 b) {
+static inline v4f32 simd_mul4(m4f32 a, v4f32 b) {
     return (v4f32){
         a[0 ]*b[0 ] + a[4 ]*b[1 ] + a[8 ]*b[2 ] + a[12]*b[3 ],
         a[1 ]*b[0 ] + a[5 ]*b[1 ] + a[9 ]*b[2 ] + a[13]*b[3 ],
@@ -38,7 +38,7 @@ static inline v4f32 ex_mul4(m4f32 a, v4f32 b) {
     };
 }
 
-static inline m4f32 ex_mmul4(m4f32 a, m4f32 b) {
+static inline m4f32 simd_mmul4(m4f32 a, m4f32 b) {
     return (m4f32){
         a[0 ]*b[0 ] + a[4 ]*b[1 ] + a[8 ]*b[2 ] + a[12]*b[3 ],
         a[1 ]*b[0 ] + a[5 ]*b[1 ] + a[9 ]*b[2 ] + a[13]*b[3 ],
@@ -62,19 +62,19 @@ static inline m4f32 ex_mmul4(m4f32 a, m4f32 b) {
     };
 }
 
-static inline float ex_dot4(v4f32 a, v4f32 b) {
+static inline float simd_dot4(v4f32 a, v4f32 b) {
     return a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3];
 }
 
-static inline float ex_sqlen4(v4f32 a) {
+static inline float simd_sqlen4(v4f32 a) {
     return a[0] * a[0] + a[1] * a[1] + a[2] * a[2];
 }
 
-static inline float ex_len4(v4f32 a) {
-    return sqrtf(ex_sqlen4(a));
+static inline float simd_len4(v4f32 a) {
+    return sqrtf(simd_sqlen4(a));
 }
 
-static inline v4f32 ex_smul4(v4f32 a, float b) {
+static inline v4f32 simd_smul4(v4f32 a, float b) {
     return (v4f32){
         a[0] * b,
         a[1] * b,

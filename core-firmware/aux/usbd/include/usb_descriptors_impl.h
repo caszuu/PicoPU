@@ -1,4 +1,3 @@
-
 /*
  * The MIT License (MIT)
  *
@@ -24,13 +23,13 @@
  *
  */
 
+// This header is a generic template for implementing the usual "usb_descriptors.c" unit using only
+// a few defines for driver selection. It should be included only _once_ in a single translation unit.
+
 /* clang-format off */
 
-#include "bsp/board_api.h"
-#include "common/tusb_types.h"
-#include "tusb.h"
-
-#include "usb.h"
+#include <common/tusb_types.h>
+#include <tusb.h>
 
 /* A combination of interfaces must have a unique product id, since PC will save device driver after the first plug.
  * Same VID/PID with different interface e.g MSC (first), then CDC (later) will possibly cause system error on PC.
@@ -41,6 +40,16 @@
 #define _PID_MAP(itf, n)  ( (CFG_TUD_##itf) << (n) )
 #define USB_PID           (0x4000 | _PID_MAP(CDC, 0) | _PID_MAP(MSC, 1) | _PID_MAP(HID, 2) | \
                            _PID_MAP(MIDI, 3) | _PID_MAP(VENDOR, 4) )
+
+#define USB_ENDPOINT_DESC(_addr, _attr, _size, _interval) \
+    {                                                     \
+        .bLength = sizeof(tusb_desc_endpoint_t),          \
+        .bDescriptorType = TUSB_DESC_ENDPOINT,            \
+        .bEndpointAddress = _addr,                        \
+        .bmAttributes = _attr,                            \
+        .wMaxPacketSize = _size,                          \
+        .bInterval = _interval,                           \
+    }
 
 //--------------------------------------------------------------------+
 // Device Descriptors
@@ -80,31 +89,78 @@ uint8_t const * tud_descriptor_device_cb(void)
 // Configuration Descriptor
 //--------------------------------------------------------------------+
 
+struct usb_config_descriptor
+{
+    tusb_desc_configuration_t config;
+
+#ifdef USBD_ENABLE_DMA
+    tusb_desc_interface_t dma_interface;
+    tusb_desc_endpoint_t dma_up_endpoint;
+    tusb_desc_endpoint_t dma_down_endpoint;
+#endif
+
+#ifdef USBD_ENABLE_SYNC
+    tusb_desc_interface_t sync_interface;
+    tusb_desc_endpoint_t sync_up_endpoint;
+    tusb_desc_endpoint_t sync_down_endpoint;
+#endif
+};
+
+#define USBD_DMA_SUBCLASS 0x01
+#define USBD_SYNC_SUBCLASS 0x02
+
 struct usb_config_descriptor const desc_configuration =
 {
   .config = {
     .bLength = sizeof(tusb_desc_configuration_t),
     .bDescriptorType = TUSB_DESC_CONFIGURATION,
     .wTotalLength = sizeof(struct usb_config_descriptor),
-    .bNumInterfaces = 1,
+    .bNumInterfaces = 0
+#ifdef USBD_ENABLE_DMA_EP
+    + 1
+#endif
+#ifdef USBD_ENABLE_SYNC_EP
+    + 1
+#endif
+    ,
     .bConfigurationValue = 1,
-    .iConfiguration = 4,
-    .bmAttributes = TU_BIT(7) | TUSB_DESC_CONFIG_ATT_SELF_POWERED, // self-powered but also not?
+    .iConfiguration = 0,
+    .bmAttributes = TU_BIT(7), // | TUSB_DESC_CONFIG_ATT_SELF_POWERED,
     .bMaxPower = 100 / 2,
   },
-  .interface = {
+
+#ifdef USBD_ENABLE_DMA_EP
+  .dma_interface = {
     .bLength = sizeof(tusb_desc_interface_t),
     .bDescriptorType = TUSB_DESC_INTERFACE,
     .bInterfaceNumber = 0,
     .bAlternateSetting = 0,
     .bNumEndpoints = 2,
     .bInterfaceClass = TUSB_CLASS_VENDOR_SPECIFIC,
-    .bInterfaceSubClass = 0x00,
+    .bInterfaceSubClass = USBD_DMA_SUBCLASS,
     .bInterfaceProtocol = 0x00,
-    .iInterface = 0,
+    .iInterface = 4,
   },
-  .trans_up_endpoint = USB_ENDPOINT_DESC(0x01, TUSB_XFER_BULK, CFG_USB_XFER_EP_SIZE, 0),
-  .trans_down_endpoint = USB_ENDPOINT_DESC(0x81, TUSB_XFER_BULK, CFG_USB_XFER_EP_SIZE, 0),
+  .dma_up_endpoint = USB_ENDPOINT_DESC(0x01, TUSB_XFER_BULK, 64, 0),
+  .dma_down_endpoint = USB_ENDPOINT_DESC(0x81, TUSB_XFER_BULK, 64, 0),
+#endif
+
+#ifdef USBD_ENABLE_SYNC
+  .sync_interface = {
+    .bLength = sizeof(tusb_desc_interface_t),
+    .bDescriptorType = TUSB_DESC_INTERFACE,
+    .bInterfaceNumber = 1,
+    .bAlternateSetting = 0,
+    .bNumEndpoints = 2,
+    .bInterfaceClass = TUSB_CLASS_VENDOR_SPECIFIC,
+    .bInterfaceSubClass = USBD_SYNC_SUBCLASS,
+    .bInterfaceProtocol = 0x00,
+    .iInterface = 5,
+  },
+  .dma_up_endpoint = USB_ENDPOINT_DESC(0x02, TUSB_XFER_INTERRUPT, 64, 1),
+  .dma_down_endpoint = USB_ENDPOINT_DESC(0x82, TUSB_XFER_INTERRUPT, 64, 1),
+#endif
+
 };
 
 // Invoked when received GET CONFIGURATION DESCRIPTOR
@@ -133,12 +189,13 @@ char const *string_desc_arr[] =
 {
   (const char[]) { 0x09, 0x04 },  // 0: supported language is English (0x0409)
   "No Vendor",                    // 1: Manufacturer
-  "{Arch} PicoPU",                // 2: Product (TODO embed arch macro)
+  USBD_DEVICE_ARCH " PicoPU",     // 2: Product (TODO embed arch macro)
   NULL,                           // 3: Serials will use unique ID if possible
-  "drv interface",                // 4: Interface
+  "USB DMA Interface",            // 4: DMA Interface Desc
+  "Low-Latency Sync Interface",   // 5: Sync Interface Desc
 };
 
-static uint16_t _desc_str[32 + 1];
+static uint16_t _desc_str[64 + 1];
 
 // Invoked when received GET STRING DESCRIPTOR request
 // Application return pointer to descriptor, whose contents must exist long enough for transfer to complete

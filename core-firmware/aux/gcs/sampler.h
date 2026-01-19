@@ -1,7 +1,7 @@
 #pragma once
 
 #include <chip.h>
-#include <common/ex_simd.h>
+#include <util/u_simd.h>
 
 #include <hardware/interp.h>
 #include <math.h>

@@ -30,6 +30,9 @@ pico_sdk_init()
 
 option(BUILD_ARCH_MOCKBIRD ON)
 
+# include the auxiliary source
+add_subdirectory(aux)
+
 if (BUILD_ARCH_MOCKBIRD)
     add_subdirectory(arch/mockbird)
 endif()

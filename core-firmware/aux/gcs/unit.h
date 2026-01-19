@@ -1,5 +1,5 @@
 #pragma once
-#include <common/si_proto.h>
+#include <util/si_proto.h>
 
 enum primitive_mode {
     e_prim_null = 0,
