@@ -1,0 +1,114 @@
+.pio_version 1
+
+.program pl_phy
+.side_set 2 opt ; note: opt is required to not override 'out' inst output in tx mode
+
+; pico-link - async config
+.define SYNC_LEN  4
+.define SYNC_WAIT 2
+.define XFER_LEN  3
+.define XFER_PHASE_OFFSET 1
+
+; pico-link - exclk config
+; .define SYNC_LEN  2
+; .define SYNC_WAIT 1
+; .define XFER_LEN  2
+; .define XFER_PHASE_OFFSET 1
+
+.define public width 4
+
+.wrap_target
+rx_setup:
+    ; clear pins and setup rx-mode pindirs
+    mov pindirs, null side 0 [0]
+
+    ; clean-up isr (possibly dirty from zero-length skip)
+    mov isr, null  [0]
+
+    wait 1 pin 0   [0] ; wait for sync pulse
+    wait 0 pin 0   [SYNC_WAIT] ; sync with tx start (and wait one cycle to get off-phase)
+
+    ; read-in frame header
+    in pins, 4 [2]
+    in pins, 4 [1]
+
+    mov y, isr [0] ; move the xfer count to y reg for rx_loop
+    in null, 8 [0] ; add padding to make header size == 4 bytes
+
+    jmp !y, tx_setup [XFER_PHASE_OFFSET]
+                     ; check for a zero-length pak
+                     ; (and wait PHASE_OFFSET cycle to be behind tx-side)
+                     ; (and allow for the voltage levels to settle)
+
+rx_loop:
+    in pins, 4       [0]
+    jmp y--, rx_loop [XFER_LEN - 2]
+
+    ; notify the cores that a packet has been received
+    irq wait 0 rel    [0]
+
+public tx_setup:
+    ; setup tx-mode pindirs
+    mov pindirs, ~null  [0]
+
+    ; try to pull a new pak from fifo, if no pak is buffered a zero-length pak
+    ; will be pulled from reg x
+    pull ifempty noblock side 0b01 [SYNC_LEN - 1]
+
+    ; sync with rx and write-out frame header
+    out y, 8 side 0b00 [SYNC_WAIT - 1] ; store xfer count for the tx_loop
+
+    out pins, 4 [2]
+    out pins, 4 [2]
+
+    nop              [1] ; (wait 2 cycles for rx side to setup)
+    jmp !y, rx_setup [0] ; check for zero-length pak
+
+tx_loop:
+    out pins, 4      [0]
+    jmp y--, tx_loop [XFER_LEN - 2]
+
+    mov pins, null   [0] ; clean-up bus
+.wrap
+
+% c-sdk {
+
+static inline void pl_phy_program_init(PIO pio, uint sm, uint offset, uint pin_base, bool start_as_tx) {
+    for (uint i = 0; i < pl_phy_width; i++) {
+        pio_gpio_init(pio, pin_base + i);
+    }
+    // pio_gpio_init(pio, pin_base - 1);
+
+    pio_sm_config c = pl_phy_program_get_default_config(offset);
+    sm_config_set_out_pins(&c, pin_base, pl_phy_width);
+    sm_config_set_in_pins(&c, pin_base);
+    // sm_config_set_set_pins(&c, pin_base - 1, 1);
+    sm_config_set_sideset_pins(&c, pin_base);
+    // sm_config_set_jmp_pin(&c, pin_base + 1);
+    pio_sm_set_consecutive_pindirs(pio, sm, pin_base, pl_phy_width, true);
+
+    // always autopull / autopush the whole 32-bit word
+    sm_config_set_out_shift(&c, false, true, 32);
+    sm_config_set_in_shift(&c, false, true, 32);
+
+    sm_config_set_clkdiv(&c, 4.f);
+
+    // TODO: setup packet-fin irq
+
+    pio_sm_init(pio, sm, offset, &c);
+    pio_sm_drain_tx_fifo(pio, sm);
+
+    // setup the x register with the "no-packet" jmp inst using a
+    // manually executed `out x, 32` inst
+    // pio_sm_put(pio, sm, pio_encode_jmp(offset + pl_phy_offset_tx_nopak));
+    // pio_sm_exec(pio, sm, pio_encode_out(pio_x, 32));
+
+    // start the phy
+    pio_sm_set_enabled(pio, sm, true);
+
+    // the phy is now in rx, switch to tx if required
+    if (start_as_tx)
+        pio_sm_exec(pio, sm, pio_encode_jmp(offset + pl_phy_offset_tx_setup));
+}
+
+%}
