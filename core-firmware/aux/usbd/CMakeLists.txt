@@ -7,9 +7,6 @@ target_include_directories(drv_usb_common INTERFACE
 )
 
 target_link_libraries(drv_usb_common INTERFACE
-    hardware_dma
-    hardware_irq
-
     pico_stdlib
     pico_unique_id
 
@@ -20,3 +17,4 @@ target_link_libraries(drv_usb_common INTERFACE
 # usb interface implementations
 
 add_subdirectory(dma)
+add_subdirectory(hwq)

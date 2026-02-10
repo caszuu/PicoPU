@@ -104,10 +104,17 @@ struct usb_config_descriptor
     tusb_desc_endpoint_t sync_up_endpoint;
     tusb_desc_endpoint_t sync_down_endpoint;
 #endif
+
+#ifdef USBD_ENABLE_HWQ
+    tusb_desc_interface_t hwq_interface;
+    tusb_desc_endpoint_t hwq_submit_endpoint;
+#endif
+
 };
 
 #define USBD_DMA_SUBCLASS 0x01
 #define USBD_SYNC_SUBCLASS 0x02
+#define USBD_HWQ_SUBCLASS 0x03
 
 struct usb_config_descriptor const desc_configuration =
 {
@@ -116,10 +123,10 @@ struct usb_config_descriptor const desc_configuration =
     .bDescriptorType = TUSB_DESC_CONFIGURATION,
     .wTotalLength = sizeof(struct usb_config_descriptor),
     .bNumInterfaces = 0
-#ifdef USBD_ENABLE_DMA_EP
+#ifdef USBD_ENABLE_DMA
     + 1
 #endif
-#ifdef USBD_ENABLE_SYNC_EP
+#ifdef USBD_ENABLE_SYNC
     + 1
 #endif
     ,
@@ -129,7 +136,7 @@ struct usb_config_descriptor const desc_configuration =
     .bMaxPower = 100 / 2,
   },
 
-#ifdef USBD_ENABLE_DMA_EP
+#ifdef USBD_ENABLE_DMA
   .dma_interface = {
     .bLength = sizeof(tusb_desc_interface_t),
     .bDescriptorType = TUSB_DESC_INTERFACE,
@@ -157,8 +164,23 @@ struct usb_config_descriptor const desc_configuration =
     .bInterfaceProtocol = 0x00,
     .iInterface = 5,
   },
-  .dma_up_endpoint = USB_ENDPOINT_DESC(0x02, TUSB_XFER_INTERRUPT, 64, 1),
-  .dma_down_endpoint = USB_ENDPOINT_DESC(0x82, TUSB_XFER_INTERRUPT, 64, 1),
+  .sync_up_endpoint = USB_ENDPOINT_DESC(0x02, TUSB_XFER_INTERRUPT, 64, 1),
+  .sync_down_endpoint = USB_ENDPOINT_DESC(0x82, TUSB_XFER_INTERRUPT, 64, 1),
+#endif
+
+#ifdef USBD_ENABLE_HWQ
+  .hwq_interface = {
+    .bLength = sizeof(tusb_desc_interface_t),
+    .bDescriptorType = TUSB_DESC_INTERFACE,
+    .bInterfaceNumber = 2,
+    .bAlternateSetting = 0,
+    .bNumEndpoints = 1,
+    .bInterfaceClass = TUSB_CLASS_VENDOR_SPECIFIC,
+    .bInterfaceSubClass = USBD_HWQ_SUBCLASS,
+    .bInterfaceProtocol = 0x00,
+    .iInterface = 6,
+  },
+  .hwq_submit_endpoint = USB_ENDPOINT_DESC(0x03, TUSB_XFER_INTERRUPT, 64, 1),
 #endif
 
 };
@@ -193,6 +215,7 @@ char const *string_desc_arr[] =
   NULL,                           // 3: Serials will use unique ID if possible
   "USB DMA Interface",            // 4: DMA Interface Desc
   "Low-Latency Sync Interface",   // 5: Sync Interface Desc
+  "HW Submit Queue Interface",    // 6: HWQ Interface Desc
 };
 
 static uint16_t _desc_str[64 + 1];
