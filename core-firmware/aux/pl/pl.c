@@ -19,7 +19,7 @@
 static struct pl_link lks[3 * 4];
 
 // a bitset of which links in [lks] are active
-static uint32_t lk_enabled;
+static atomic_uint lk_enabled;
 
 static atomic_uint lk_tx_idle;
 static atomic_uint lk_rx_irq;
@@ -41,9 +41,9 @@ static void pl_link_tx_zl(uint32_t idx) {
 
     struct pl_tx_header pak = {
         .credit_return = MIN(lk->credit_to_return, 255),
-        .chan_idx = 0,    // mock channel, rx_cb won't be called anyway
-        .xfer_count0 = 0, // no data
-        .xfer_count1 = 0,
+        .chan_idx = 0,                       // mock channel, rx_cb won't be called anyway
+        .xfer_count0 = pl_size_to_xc(lk, 4), // no data
+        .xfer_count1 = pl_size_to_xc(lk, 4),
     };
 
     atomic_fetch_sub(&lk->available_credit, sizeof(struct pl_tx_header));
@@ -56,6 +56,7 @@ static void pl_link_feed_tx(uint32_t idx, bool only_if_idle) {
     struct pl_link *lk = &lks[idx];
 
     // == citical section start ==
+
     uint32_t irq = spin_lock_blocking(lk->tx_lock);
 
     if (only_if_idle && !(lk_tx_idle & (1u << idx))) {
@@ -88,8 +89,8 @@ static void pl_link_feed_tx(uint32_t idx, bool only_if_idle) {
     }
 
     atomic_fetch_and(&lk_tx_idle, ~(1u << idx));
-
     spin_unlock(lk->tx_lock, irq);
+
     // == citical section end ==
 
     // fill-in packet header fields
@@ -135,13 +136,13 @@ static void pl_link_tx_irq(uint32_t idx) {
 }
 
 static void pl_tx_irq() {
-    for (uint32_t en = lk_enabled, i = __builtin_clz(en); en; en ^= (1u << i), i = __builtin_clz(en)) {
+    for (uint32_t en = lk_enabled, i = __builtin_ctz(en); en; en ^= (1u << i), i = __builtin_ctz(en)) {
         pl_link_tx_irq(i);
     }
 }
 
 static void pl_rx_irq(uint32_t pio) {
-    for (uint32_t irqs = PIO_INSTANCE(pio)->irq, i = __builtin_clz(irqs); irqs; irqs ^= (1u << i), i = __builtin_clz(irqs)) {
+    for (uint32_t irqs = PIO_INSTANCE(pio)->irq, i = __builtin_ctz(irqs); irqs; irqs ^= (1u << i), i = __builtin_ctz(irqs)) {
         struct pl_link *lk = &lks[3 * pio + i];
 
         pio_interrupt_clear(PIO_INSTANCE(pio), i);
@@ -180,21 +181,27 @@ static void pl_rx_proc_link(uint32_t idx) {
 
     for (; fifo_get_available(&lk->rx_fifo);) {
         struct pl_rx_header h;
-        fifo_pop(&lk->rx_fifo, &h, sizeof(h));
+        fifo_peek(&lk->rx_fifo, &h, sizeof(h), 0);
         uint32_t pak_size = pl_xc_to_size(lk, h.xfer_count);
 
         if (h.credit_return) {
             trigger_tx = true;
         }
 
-        if (pak_size - sizeof(h)) {
+        if (pak_size - sizeof(h) && lk->rx_cb) {
             // notify the user with the packet
             lk->rx_cb(h.chan_idx, &h);
         }
 
         fifo_release_unsafe(&lk->rx_fifo, pak_size);
         atomic_fetch_add(&lk->credit_to_return, pak_size);
+
+        // FIXME: failsafe to break out if corrupt
     }
+
+    // trigger a zero-length tx if too many credits are buffered to avoid stalling
+    if (lk->credit_to_return > 128)
+        trigger_tx = true;
 
     // restart transmision if new credits were received
     if (trigger_tx) {
@@ -206,7 +213,7 @@ static void pl_rx_proc_irq() {
     uint32_t links_to_proc = atomic_load(&lk_rx_irq);
     atomic_fetch_xor(&lk_rx_irq, links_to_proc);
 
-    for (uint32_t bits = links_to_proc, i = __builtin_clz(bits); bits; bits ^= (1u << i), i = __builtin_clz(bits)) {
+    for (uint32_t bits = links_to_proc, i = __builtin_ctz(bits); bits; bits ^= (1u << i), i = __builtin_ctz(bits)) {
         pl_rx_proc_link(i);
     }
 }
@@ -214,9 +221,22 @@ static void pl_rx_proc_irq() {
 // driver api //
 
 void pl_init(uint32_t pio_idx) {
+    static bool initial_init = true;
+
+    if (initial_init) {
+        irq_set_exclusive_handler(RX_PROC_IRQ, pl_rx_proc_irq);
+        irq_set_enabled(RX_PROC_IRQ, true);
+
+        // FIXME: handle dma irqs better
+        // irq_add_shared_handler(DMA_IRQ_0, pl_tx_irq, 200);
+        irq_set_exclusive_handler(DMA_IRQ_0, pl_tx_irq);
+        irq_set_enabled(DMA_IRQ_0, true);
+
+        initial_init = false;
+    }
+
     PIO pio = pio_get_instance(pio_idx);
     int res = pio_add_program_at_offset(pio, &pl_phy_program, 0);
-
     assert(res >= 0);
 
     const void *rx_irq_table[] = {pl_rx_irq0, pl_rx_irq1, pl_rx_irq2};
@@ -225,10 +245,6 @@ void pl_init(uint32_t pio_idx) {
     irq_set_exclusive_handler(pl_irq, rx_irq_table[pio_idx]);
     irq_set_priority(pl_irq, 0x70);
     irq_set_enabled(pl_irq, true);
-
-    // FIXME: handle dma irqs better
-    irq_add_shared_handler(DMA_IRQ_0, pl_tx_irq, 200);
-    irq_set_enabled(DMA_IRQ_0, true);
 }
 
 uint32_t pl_init_link(uint32_t pio_idx, uint32_t pio_sm, const struct pl_link_config *config) {
@@ -236,9 +252,22 @@ uint32_t pl_init_link(uint32_t pio_idx, uint32_t pio_sm, const struct pl_link_co
     uint32_t lk_idx = pio_idx * 4 + pio_sm;
     struct pl_link *lk = &lks[lk_idx];
 
+    // validate configuration
+
     assert((lk_enabled & (1u << lk_idx)) == 0 && "link already initialized");
     assert(pio_sm <= 4 && "out-of-bounds sm idx");
     assert(config->chan_count > 0 && config->chan_count <= 16 && "invalid channel count");
+
+    uint32_t tx_size_log2 = __builtin_ctz(config->tx_buf_size);
+    assert(1u << tx_size_log2 == config->tx_buf_size && "tx_buf_size must be a power of 2");
+
+    for (uint32_t chan = 0; chan < config->chan_count; chan++) {
+        assert((uintptr_t)config->tx_bufs[chan] % config->tx_buf_size == 0 && "tx_buf must always be aligned to tx_buf_size");
+    }
+
+    uint32_t rx_size_log2 = __builtin_ctz(config->rx_buf_size);
+    assert(1u << rx_size_log2 == config->rx_buf_size && "rx_buf_size must be a power of 2");
+    assert((uintptr_t)config->rx_buf % config->rx_buf_size == 0 && "rx_buf must always be aligned to rx_buf_size");
 
     // init and start-up link phy (TODO: setup a software arbiter and replace is_initial)
     pl_phy_program_init(pio, pio_sm, 0, config->pin_base, config->is_initial);
@@ -278,27 +307,26 @@ uint32_t pl_init_link(uint32_t pio_idx, uint32_t pio_sm, const struct pl_link_co
     channel_config_set_transfer_data_size(&c, DMA_SIZE_32);
     channel_config_set_write_increment(&c, true);
     channel_config_set_read_increment(&c, false);
-    channel_config_set_ring(&c, true, 11);
+    channel_config_set_ring(&c, true, tx_size_log2);
     channel_config_set_dreq(&c, PIO_DREQ_NUM(pio, pio_sm, false));
 
-    // dma_channel_set_irq0_enabled(lk->rx_dma_chan, false);
     dma_channel_configure(lk->rx_dma_chan, &c, config->rx_buf, &pio->rxf[pio_sm], dma_encode_endless_transfer_count(), true);
 
     c = dma_channel_get_default_config(lk->tx_dma_chan);
     channel_config_set_transfer_data_size(&c, DMA_SIZE_32);
     channel_config_set_write_increment(&c, false);
     channel_config_set_read_increment(&c, true);
-    channel_config_set_ring(&c, false, 11);
+    channel_config_set_ring(&c, false, rx_size_log2);
     channel_config_set_dreq(&c, PIO_DREQ_NUM(pio, pio_sm, true));
 
     dma_channel_set_irq0_enabled(lk->tx_dma_chan, true);
     dma_channel_configure(lk->tx_dma_chan, &c, &pio->txf[pio_sm], NULL, 0, false);
 
-    // bus_ctrl_hw->priority = BUSCTRL_BUS_PRIORITY_DMA_W_BITS | BUSCTRL_BUS_PRIORITY_DMA_R_BITS;
     pio_set_irqn_source_enabled(pio, 0, pis_interrupt0 + pio_sm, true);
 
     // set link enable bit for irq handlers
-    lk_enabled |= 1u << lk_idx;
+    atomic_fetch_or(&lk_tx_idle, 1u << lk_idx);
+    atomic_fetch_or(&lk_enabled, 1u << lk_idx);
 
     return lk_idx;
 }

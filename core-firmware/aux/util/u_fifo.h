@@ -104,7 +104,7 @@ static bool fifo_pop(struct u_fifo *f, void *dst, uint32_t size) {
 
     // read data until the end of ring
     uint32_t n = MIN(f->buf_size - f->tail, size);
-    uint32_t next_tail = f->tail - n;
+    uint32_t next_tail = f->tail + n;
     memcpy(dst, &f->buf[f->tail], n);
 
     // check if we need to wrap
