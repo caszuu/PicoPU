@@ -17,8 +17,18 @@ struct pl_tx_header {
     uint8_t xfer_count0 /*used by tx*/, xfer_count1 /*used by rx*/;
 };
 
-typedef void (*pl_rx_cb)(uint32_t chan, const struct pl_rx_header *header);
+typedef void (*pl_rx_cb)(uint32_t link, uint32_t chan, uint32_t n_bytes);
 typedef void (*pl_tx_cb)();
+
+struct pl_link_perf {
+    atomic_uint tx_bytes;
+    atomic_uint rx_bytes;
+
+    atomic_uint tx_stalls;
+
+    atomic_uint rx_irqs;
+    atomic_uint rx_proc_irqs;
+};
 
 struct pl_link {
     // link state //
@@ -30,6 +40,10 @@ struct pl_link {
 
     uint32_t active_chan;
     uint32_t active_pak_size;
+
+#ifdef PL_ENABLE_STATS
+    struct pl_link_perf perf;
+#endif
 
     // link resources //
 
@@ -76,12 +90,17 @@ void pl_init(uint32_t pio_index);
 // after this function returns. returns the link index usable for the rest of the api.
 uint32_t pl_init_link(uint32_t pio_index, uint32_t pio_sm, const struct pl_link_config *config);
 
+// fetch the link-specific performance counters and store them into [buf], optionally also reset them.
+// this function will return valid data only if the driver was compiled with PL_ENABLE_PERF
+void pl_perf(uint32_t link, struct pl_link_perf *buf, bool reset);
+
 // push a packet to a channel transmit queue, the link will schedule the packet based
 // on the channel prioroty. this call will block until enough space is present in the
 // internal transmit queue for the packet.
 void pl_tx(uint32_t link, uint32_t chan, const void *src, uint32_t size);
 
-// pop a packet from the internal receive buffer, this can only be called from a
-// receive callback (rx_cb) context, otherwise it's UB. returns the number of bytes
-// actually read.
-uint32_t pl_rx(uint32_t link, const struct pl_rx_header *header, void *dst, uint32_t max_size);
+// read a range from a packet inside the internal receive buffer, this can only be called from a
+// receive callback (rx_cb) context, otherwise it's UB. a pl_rx call does not discard any data and
+// reading from the same range muliple times will yield identical output (under the same rx_cb context).
+// returns the number of bytes actually read.
+uint32_t pl_rx(uint32_t link, void *dst, uint32_t max_size, uint32_t offset);

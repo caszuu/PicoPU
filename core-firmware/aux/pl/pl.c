@@ -84,6 +84,9 @@ static void pl_link_feed_tx(uint32_t idx, bool only_if_idle) {
     uint32_t pak_size = pl_xc_to_size(lk, pak->xfer_count0);
 
     if (pak_size > atomic_load(&lk->available_credit)) {
+#ifdef PL_ENABLE_STATS
+        atomic_fetch_add(&lk->tx_stalls, 1);
+#endif
         atomic_fetch_or(&lk_tx_idle, 1u << idx);
         goto unlock;
     }
@@ -102,6 +105,10 @@ static void pl_link_feed_tx(uint32_t idx, bool only_if_idle) {
 
     atomic_fetch_sub(&lk->credit_to_return, pak->credit_return);
     atomic_fetch_sub(&lk->available_credit, pak_size);
+
+#ifdef PL_ENABLE_STATS
+    atomic_fetch_add(&lk->tx_bytes, pak_size);
+#endif
 
     dma_channel_transfer_from_buffer_now(lk->tx_dma_chan, pak, pak_size / sizeof(uint32_t));
     return;
@@ -160,6 +167,11 @@ static void pl_rx_irq(uint32_t pio) {
 
         atomic_fetch_or(&lk_rx_irq, 1u << (3 * pio + i));
         irq_set_pending(RX_PROC_IRQ);
+
+#ifdef PL_ENABLE_STATS
+        atomic_fetch_add(&lk->rx_irqs, 1);
+        atomic_fetch_add(&lk->rx_bytes, pak_size);
+#endif
     }
 }
 
@@ -179,6 +191,10 @@ static void pl_rx_proc_link(uint32_t idx) {
     struct pl_link *lk = &lks[idx];
     bool trigger_tx = false;
 
+#ifdef PL_ENABLE_STATS
+    atomic_fetch_add(&lk->rx_proc_irqs, 1);
+#endif
+
     for (; fifo_get_available(&lk->rx_fifo);) {
         struct pl_rx_header h;
         fifo_peek(&lk->rx_fifo, &h, sizeof(h), 0);
@@ -190,7 +206,7 @@ static void pl_rx_proc_link(uint32_t idx) {
 
         if (pak_size - sizeof(h) && lk->rx_cb) {
             // notify the user with the packet
-            lk->rx_cb(h.chan_idx, &h);
+            lk->rx_cb(idx, h.chan_idx, pak_size - sizeof(h));
         }
 
         fifo_release_unsafe(&lk->rx_fifo, pak_size);
@@ -331,6 +347,30 @@ uint32_t pl_init_link(uint32_t pio_idx, uint32_t pio_sm, const struct pl_link_co
     return lk_idx;
 }
 
+void pl_perf(uint32_t link, struct pl_link_perf *buf, bool reset) {
+#ifdef PL_ENABLE_PERF
+    struct pl_link *lk = lks[link];
+
+    if (reset) {
+        buf->tx_bytes = atomic_exchange(&lk->perf.tx_bytes, 0);
+        buf->rx_bytes = atomic_exchange(&lk->perf.rx_bytes, 0);
+
+        buf->tx_stalls = atomic_exchange(&lk->perf.tx_stalls, 0);
+
+        buf->rx_irqs = atomic_exchange(&lk->perf.rx_irqs, 0);
+        buf->rx_proc_irqs = atomic_exchange(&lk->perf.rx_proc_irqs, 0);
+    } else {
+        buf->tx_bytes = atomic_load(&lk->perf.tx_bytes);
+        buf->rx_bytes = atomic_load(&lk->perf.rx_bytes);
+
+        buf->tx_stalls = atomic_load(&lk->perf.tx_stalls);
+
+        buf->rx_irqs = atomic_load(&lk->perf.rx_irqs);
+        buf->rx_proc_irqs = atomic_load(&lk->perf.rx_proc_irqs);
+    }
+#endif
+}
+
 void pl_tx(uint32_t link, uint32_t chan, const void *src, uint32_t size) {
     assert(link < 3 * 4 && "out-of-bounds link index");
     assert(lk_enabled & (1u << link) && "link has not been initialized");
@@ -368,10 +408,13 @@ void pl_tx(uint32_t link, uint32_t chan, const void *src, uint32_t size) {
     pl_link_feed_tx(link, true);
 }
 
-uint32_t pl_rx(uint32_t link, const struct pl_rx_header *header, void *dst, uint32_t max_size) {
+uint32_t pl_rx(uint32_t link, void *dst, uint32_t max_size, uint32_t offset) {
     struct pl_link *lk = &lks[link];
-    uint32_t size = MIN(pl_xc_to_size(lk, header->xfer_count), max_size);
 
-    fifo_peek(&lk->rx_fifo, dst, size, 0);
+    // FIXME: clamp the read to the packet size
+    // uint32_t size = MIN(pak_size - sizeof(struct pl_rx_header) - offset, max_size);
+    uint32_t size = max_size;
+
+    fifo_peek(&lk->rx_fifo, dst, size, sizeof(struct pl_rx_header) + offset);
     return size;
 }
