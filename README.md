@@ -6,14 +6,14 @@ The project is currently very WIP, more is to come.
 
 Monorepo subprojects:
 - `core-firmware/` - PicoPU firmware
-	- `common/` - shared firmware utilities
- 	- `usbd/` - a protocol generic `tinyusb` device driver
+	- `aux/` - auxiliary drivers and utilities
+	 	- `usbd/` - a protocol generic `tinyusb` device driver
   	- `dvid/` - a simple hstx-based dvi driver
+		- `pl/` - Pico-Link - a powerful `rp2350` optimized inter-connect protocol
   	- `gcs/` - an arch agnostic software renderer
+		- `util/` - general utility headers
 	- `arch/` - device architecture specific source files
-		- `mockbird/` - RPi Pico 2 (mocking bird) arch firmware
-- `pdrv/` - a user-space host-side driver written in go
-	- `bench/` - an example application using directly `pdrv` apis
+		- `mock/` - RPi Pico 2 (mocking bird) arch firmware
 - `boards/` - EasyEDA Std design files
 	- `broker` - Files for the Broker/Motherboard
 	- `shader` - Files for the smaller Shader boards

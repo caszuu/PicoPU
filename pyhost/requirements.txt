@@ -1,6 +1,0 @@
-# hostd.py
-pyusb
-pygame
-
-# sc.py
-llvmlite
