@@ -1,20 +1,19 @@
 #pragma once
 
-#include "hwq_cmd_proto.h"
+#include <device/usbd_pvt.h>
 #include <stdbool.h>
 
 // hardware command queue driver //
 
-enum hwq_result {
-    HWQ_RESULT_QUEUE_NOT_ATTACHED = -3,
-    HWQ_RESULT_QUEUE_REATTACHED,
-    HWQ_RESULT_NO_CMDS_AVAILABLE,
+/*
+ * checks if the hw queue interface is currently attached to a host.
+ */
 
-    HWQ_RESULT_SUCCESS = 0,
-};
+bool hwq_is_host_present();
 
-// checks if the hw queue is currently attached to a host.
-bool hwq_is_attached();
+/*
+ * insert the hwq tinyusb driver to a usbd decriptor list. after initializing
+ * the driver will become active and start awaiting a host.
+ */
 
-// try to pop the next device cmd from the hw queue.
-enum hwq_result hwq_next_cmd(union hwq_cmd *cmd);
+void hwq_get_driver_desc(usbd_class_driver_t *out_desc);

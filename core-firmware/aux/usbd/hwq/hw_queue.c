@@ -1,8 +1,7 @@
 #include "hw_queue.h"
 #include "hwq_cmd_proto.h"
-#include "hwq_ep_proto.h"
 
-#include <util/u_fifo.h>
+#include <cp/cp.h>
 
 #include <device/usbd.h>
 #include <device/usbd_pvt.h>
@@ -14,78 +13,40 @@
 #define HWQ_CMD_MAX_SIZE 16
 #define HWQ_CMD_BUFFER_SIZE 512
 
+#define USBD_HWQ_SUBCLASS 0x03
+
 // hw queue driver //
 
 static uint8_t hw_cmd_xfer_buf[HWQ_CMD_MAX_SIZE];
-static uint8_t hw_cmd_queue_buf[HWQ_CMD_BUFFER_SIZE];
 
-// TODO: probably change to an array of hwq_cmds, no need for byte fifo (u_element_fifo?)
-static struct u_fifo hw_cmd_queue;
+static bool is_host_connected;
+static bool is_host_initialized;
 
-static bool hwq_is_host_attached = 0;
-static bool hwq_was_reset = 0;
-
-static void hwq_init() {
-    hw_cmd_queue = (struct u_fifo){
-        .buf = hw_cmd_queue_buf,
-        .buf_size = HWQ_CMD_BUFFER_SIZE,
-    };
-
-    hwq_is_host_attached = false;
+static void hwq_reset() {
+    is_host_connected = false;
+    is_host_initialized = false;
 }
 
-bool hwq_is_attached() {
-    return hwq_is_host_attached;
+bool hwq_is_host_present() {
+    return is_host_initialized;
 }
 
-enum hwq_result hwq_next_cmd(union hwq_cmd *cmd) {
-    if (!hwq_is_host_attached)
-        return HWQ_RESULT_QUEUE_NOT_ATTACHED;
-
-    if (hwq_was_reset) {
-        hwq_was_reset = false;
-        return HWQ_RESULT_QUEUE_REATTACHED;
-    }
-
-    if (!fifo_get_free(&hw_cmd_queue))
-        return HWQ_RESULT_NO_CMDS_AVAILABLE;
-
-    hwq_cmd_t type;
-    fifo_peek(&hw_cmd_queue, &type, 1, 0);
-
-    switch (type) {
-    case HWQ_CMD_EXECUTE:
-        fifo_pop(&hw_cmd_queue, cmd, sizeof(struct hwq_execute_cmd));
-        break;
-
-    default:
-        assert(false && "unknown cmd");
-    }
-
-    return HWQ_RESULT_SUCCESS;
-}
-
-// usb <-> hw queue interface //
+// usb <-> scheduler interface //
 
 static uint32_t hwq_rhport;
 static uint32_t hwq_submit_ep;
 
 static void hwq_usb_init() {
-    hwq_init();
+    hwq_reset();
 }
 
-static void hwq_usb_reset(uint32_t rhport) {
+static void hwq_usb_reset(uint8_t rhport) {
     // clean-up usb state
     usbd_edpt_close(rhport, hwq_submit_ep);
 
-    hwq_was_reset = true;
-    hwq_is_host_attached = false;
-
     // clean-up and reinit queue state
-    hwq_init();
+    hwq_reset();
 }
-
-#define USBD_HWQ_SUBCLASS 0x03
 
 static uint16_t hwq_usb_open(uint8_t rhport, tusb_desc_interface_t const *itf_desc, uint16_t max_len) {
     // is this the wanted usb driver?
@@ -104,7 +65,7 @@ static uint16_t hwq_usb_open(uint8_t rhport, tusb_desc_interface_t const *itf_de
     hwq_rhport = rhport;
     hwq_submit_ep = ((tusb_desc_endpoint_t *)ep_desc)->bEndpointAddress;
 
-    hwq_is_host_attached = true;
+    is_host_connected = true;
 
     // setup initial ep read
     usbd_edpt_xfer(rhport, hwq_submit_ep, hw_cmd_xfer_buf, HWQ_CMD_MAX_SIZE);
@@ -113,24 +74,103 @@ static uint16_t hwq_usb_open(uint8_t rhport, tusb_desc_interface_t const *itf_de
 }
 
 static bool hwq_control_xfer_cb(uint8_t rhport, uint8_t stage, tusb_control_request_t const *req) {
-    return false;
+    if (req->bmRequestType_bit.type != TUSB_REQ_TYPE_VENDOR ||
+        req->bmRequestType_bit.recipient != TUSB_REQ_RCPT_INTERFACE)
+        return false;
+
+    bool is_recv = req->bmRequestType_bit.direction == TUSB_DIR_IN;
+
+    if (req->bRequest != USBD_HWQ_SUBCLASS)
+        return false;
+
+    if (stage != CONTROL_STAGE_SETUP)
+        return true;
+
+    switch (req->wIndex) {
+    case 0: /* initialize */
+        if (is_recv)
+            return false;
+
+        if (req->wValue != HWQ_API_VERSION) {
+            hwq_control_result_t res = HWQ_CTL_RESULT_API_VERSION_MISMATCH;
+
+            tud_control_xfer(rhport, req, &res, sizeof(res));
+            return true;
+        }
+
+        if (is_host_initialized) {
+            hwq_control_result_t res = HWQ_CTL_RESULT_ALREADY_INITIALIZED;
+
+            tud_control_xfer(rhport, req, &res, sizeof(res));
+            return true;
+        }
+
+        hwq_control_result_t res = HWQ_CTL_RESULT_SUCCESS;
+
+        tud_control_xfer(rhport, req, &res, sizeof(res));
+        return true;
+
+    default:
+        return false;
+    }
 }
 
 static bool hwq_xfer_cb(uint8_t rhport, uint8_t ep_addr, xfer_result_t result, uint32_t xferred_bytes) {
+    // validate xfer
+
     if (ep_addr != hwq_submit_ep)
         return false;
 
-    // parse and process cmd
-    struct hwq_ep_submit_cmd *cmd = (struct hwq_ep_submit_cmd *)hw_cmd_xfer_buf;
-
-    if (cmd->type != HWQ_EP_CMD_SUBMIT) {
-        // prof_log("incorrect hwq cmd, ignoring.");
-        goto read_next;
+    if (result != XFER_RESULT_SUCCESS) {
+        hwq_usb_reset(rhport);
+        return true;
     }
 
-    fifo_push(&hw_cmd_queue, hw_cmd_xfer_buf, sizeof(*cmd));
+    // parse and process cmd
 
-read_next:
+    union hwq_cmd_data *cmd = (union hwq_cmd_data *)hw_cmd_xfer_buf;
+
+    switch (cmd->type) {
+    case HWQ_CMD_ATTACH_QUEUE:
+        cp_attach_queue(cmd->attach.queue_idx, (void *)cmd->attach.cmdbuf);
+        break;
+
+    case HWQ_CMD_ABORT_QUEUE:
+        assert("abort not yet implemented");
+        break;
+
+    case HWQ_CMD_RESET:
+        // FIXME: proper scheduler reset
+        hwq_usb_reset(rhport);
+        break;
+
+    default:
+        break;
+    }
+
     usbd_edpt_xfer(rhport, hwq_submit_ep, hw_cmd_xfer_buf, HWQ_CMD_MAX_SIZE);
     return true;
+}
+
+// usb driver descriptor //
+
+/* clang-format off */
+
+static usbd_class_driver_t const app_driver =
+{
+#if CFG_TUSB_DEBUG >= 2
+    .name             = "hwq",
+#endif
+    .init             = hwq_usb_init,
+    .reset            = hwq_usb_reset,
+    .open             = hwq_usb_open,
+    .control_xfer_cb  = hwq_control_xfer_cb,
+    .xfer_cb          = hwq_xfer_cb,
+    .sof              = NULL
+};
+
+/* clang-format on */
+
+void hwq_get_driver_desc(usbd_class_driver_t *out_desc) {
+    *out_desc = app_driver;
 }
