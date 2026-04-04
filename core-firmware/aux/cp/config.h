@@ -1,0 +1,13 @@
+#pragma once
+
+#ifndef CP_MAX_QUEUE_LOCAL_SEMAPHORES
+#define CP_MAX_QUEUE_LOCAL_SEMAPHORES 16
+#endif
+
+#ifndef CP_MAX_QUEUES
+#define CP_MAX_QUEUES 1
+#endif
+
+#ifndef CP_MAX_COMMANDS_IN_FLIGHT
+#define CP_MAX_COMMANDS_IN_FLIGHT 4
+#endif
