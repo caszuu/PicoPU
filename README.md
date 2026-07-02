@@ -14,6 +14,10 @@ Monorepo subprojects:
 		- `mockbird/` - RPi Pico 2 (mocking bird) arch firmware
 - `pdrv/` - a user-space host-side driver written in go
 	- `bench/` - an example application using directly `pdrv` apis
-- `boards/` - EasyEDA Std design files
-	- `broker` - Files for the Broker/Motherboard
-	- `shader` - Files for the smaller Shader boards
+- `boards/` - Board design files
+	- `images` - used images, #TODO add images of boards
+	- `broker` - EasyEDA Std. file for the Broker/Motherboard
+	- `shader` - EasyEDA Std. file for the smaller Shader boards
+	- `just-V2` - EasyEDA Std. file for the V2 board
+	- `pcie` - KiCad project with the "V3" pcie edition
+ 
