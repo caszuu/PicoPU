@@ -160,6 +160,374 @@
 			)
 			(embedded_fonts no)
 		)
+		(symbol "Device:C_Polarized_US"
+			(pin_numbers
+				(hide yes)
+			)
+			(pin_names
+				(offset 0.254)
+				(hide yes)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" "C"
+				(at 0.635 2.54 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+				)
+			)
+			(property "Value" "C_Polarized_US"
+				(at 0.635 -2.54 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+				)
+			)
+			(property "Footprint" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Datasheet" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Description" "Polarized capacitor, US symbol"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_keywords" "cap capacitor"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_fp_filters" "CP_*"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(symbol "C_Polarized_US_0_1"
+				(polyline
+					(pts
+						(xy -2.032 0.762) (xy 2.032 0.762)
+					)
+					(stroke
+						(width 0.508)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -1.778 2.286) (xy -0.762 2.286)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -1.27 1.778) (xy -1.27 2.794)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(arc
+					(start -2.032 -1.27)
+					(mid 0 -0.5572)
+					(end 2.032 -1.27)
+					(stroke
+						(width 0.508)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(symbol "C_Polarized_US_1_1"
+				(pin passive line
+					(at 0 3.81 270)
+					(length 2.794)
+					(name ""
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 0 -3.81 90)
+					(length 3.302)
+					(name ""
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
+		(symbol "Device:D"
+			(pin_numbers
+				(hide yes)
+			)
+			(pin_names
+				(offset 1.016)
+				(hide yes)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" "D"
+				(at 0 2.54 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "D"
+				(at 0 -2.54 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Datasheet" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Description" "Diode"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Sim.Device" "D"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Sim.Pins" "1=K 2=A"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_keywords" "diode"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_fp_filters" "TO-???* *_Diode_* *SingleDiode* D_*"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(symbol "D_0_1"
+				(polyline
+					(pts
+						(xy -1.27 1.27) (xy -1.27 -1.27)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 1.27 1.27) (xy 1.27 -1.27) (xy -1.27 0) (xy 1.27 1.27)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 1.27 0) (xy -1.27 0)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(symbol "D_1_1"
+				(pin passive line
+					(at -3.81 0 0)
+					(length 2.54)
+					(name "K"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 3.81 0 180)
+					(length 2.54)
+					(name "A"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
 		(symbol "Device:L"
 			(pin_numbers
 				(hide yes)
@@ -1080,6 +1448,194 @@
 			)
 			(embedded_fonts no)
 		)
+		(symbol "Regulator_Switching:XL4015"
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" "U?"
+				(at -6.35 6.35 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "XL4015"
+				(at 6.35 6.35 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" "Package_TO_SOT_SMD:TO-263-5_TabPin3"
+				(at 21.59 -7.62 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Datasheet" "http://www.xlsemi.net/datasheet/XL4015%20datasheet-English.pdf"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Description" "5A 180kHz 36V Buck DC to DC Converter"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_keywords" "Buck DC-DC"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_fp_filters" "TO?263*"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(symbol "XL4015_0_1"
+				(rectangle
+					(start -7.62 5.08)
+					(end 7.62 -5.08)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type background)
+					)
+				)
+			)
+			(symbol "XL4015_1_1"
+				(pin power_in line
+					(at 0 -7.62 90)
+					(length 2.54)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin input line
+					(at 10.16 -2.54 180)
+					(length 2.54)
+					(name "FB"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_out line
+					(at 10.16 2.54 180)
+					(length 2.54)
+					(name "SW"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin input line
+					(at -10.16 -2.54 0)
+					(length 2.54)
+					(name "VC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "4"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -10.16 2.54 0)
+					(length 2.54)
+					(name "VIN"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "5"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
 		(symbol "power:+12V"
 			(power global)
 			(pin_numbers
@@ -1752,6 +2308,36 @@
 			(embedded_fonts no)
 		)
 	)
+	(rectangle
+		(start 20.32 143.51)
+		(end 154.94 185.42)
+		(stroke
+			(width 0)
+			(type dash)
+		)
+		(fill
+			(type none)
+		)
+		(uuid "3fb04dbd-89ac-40bb-8115-5330eba935d4")
+	)
+	(rectangle
+		(start 20.32 100.33)
+		(end 154.94 142.24)
+		(stroke
+			(width 0)
+			(type dash)
+		)
+		(fill
+			(type none)
+		)
+		(uuid "86634319-81c3-4ced-b5a1-969722a7ad03")
+	)
+	(junction
+		(at 109.22 111.76)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "044f1c2f-a19d-4e44-b6de-dbc0b55853fa")
+	)
 	(junction
 		(at 78.74 40.64)
 		(diameter 0)
@@ -1769,6 +2355,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "19f4dadb-6ed8-4142-af9d-23c6ccbc6d84")
+	)
+	(junction
+		(at 109.22 154.94)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "1f970a66-f0fc-45e9-8fab-17f2e47782e0")
 	)
 	(junction
 		(at 38.1 45.72)
@@ -1789,10 +2381,28 @@
 		(uuid "2cb48a0a-62b8-403a-901f-cf1f9e9e3aa6")
 	)
 	(junction
+		(at 91.44 154.94)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "3649ccf6-778c-4c53-9fb0-6de5dd16b167")
+	)
+	(junction
 		(at 160.02 67.31)
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "3850f518-88ea-4c27-94e5-03685eb333a9")
+	)
+	(junction
+		(at 109.22 162.56)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "399fdf6d-714d-405e-8237-5a664f43fa17")
+	)
+	(junction
+		(at 25.4 113.03)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "3acf8d44-29d3-4aef-9a4c-ef4a462b5071")
 	)
 	(junction
 		(at 41.91 45.72)
@@ -1813,6 +2423,12 @@
 		(uuid "55ae2758-eb2d-4b50-9798-fc09ed263a92")
 	)
 	(junction
+		(at 62.23 153.67)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "5857b8d5-ccb2-4390-a228-4bcf730eb174")
+	)
+	(junction
 		(at 87.63 81.28)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -1825,10 +2441,28 @@
 		(uuid "6ab01cd1-4963-4113-8e22-d6a040acd56f")
 	)
 	(junction
+		(at 138.43 111.76)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "6e09e202-10b4-44fc-9f8f-0b131d8b08ae")
+	)
+	(junction
+		(at 138.43 154.94)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "7002cb9b-2a03-499a-88e8-29b1b7d948af")
+	)
+	(junction
 		(at 134.62 50.8)
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "73e7efdd-790b-4d19-98af-7060e8691cd0")
+	)
+	(junction
+		(at 62.23 110.49)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "8c67579b-01e3-4648-b7f2-c3428c0ff357")
 	)
 	(junction
 		(at 44.45 45.72)
@@ -1837,10 +2471,22 @@
 		(uuid "9213a820-899e-49d8-9fef-05a3852fd5d4")
 	)
 	(junction
+		(at 109.22 119.38)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "9806a4ee-622f-4dfe-b780-bdf8c3bbb056")
+	)
+	(junction
 		(at 78.74 73.66)
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "9abaaac8-5b2e-4dd1-ac04-b870d4b4cf03")
+	)
+	(junction
+		(at 120.65 154.94)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "9ae312ff-1182-496b-a5ed-45cc79ff3dbf")
 	)
 	(junction
 		(at 160.02 74.93)
@@ -1855,10 +2501,40 @@
 		(uuid "aba58f24-e1c3-4050-b623-ba45f4de4121")
 	)
 	(junction
+		(at 25.4 120.65)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "b242eda4-373c-4023-8a4d-bc6b1c1a90ed")
+	)
+	(junction
 		(at 41.91 78.74)
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "bedfffba-0a72-477d-bd29-a1e976ce8e60")
+	)
+	(junction
+		(at 120.65 111.76)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "c4cd05ff-bac4-472b-9e6c-5c6261f277b7")
+	)
+	(junction
+		(at 25.4 163.83)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "cea3f00a-4a88-47a6-9319-081b3c05d8ed")
+	)
+	(junction
+		(at 91.44 111.76)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "d87b9fed-392f-4f9e-b498-a99a927ffed8")
+	)
+	(junction
+		(at 87.63 170.18)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "e11278bb-e139-4f1a-a7ad-7c288b56b9b3")
 	)
 	(junction
 		(at 68.58 73.66)
@@ -1873,6 +2549,12 @@
 		(uuid "e2755143-3dac-4269-8a5a-72ec28e0a549")
 	)
 	(junction
+		(at 25.4 156.21)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "e29f1770-1153-4da2-ab5e-ae475b803e8b")
+	)
+	(junction
 		(at 38.1 78.74)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -1885,6 +2567,12 @@
 		(uuid "e4deb91f-5aff-471b-b2b1-bef30e203b27")
 	)
 	(junction
+		(at 120.65 119.38)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "e6032847-ea8b-4bec-93f3-b24340b5fdff")
+	)
+	(junction
 		(at 153.67 67.31)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -1895,6 +2583,18 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "f3006341-7fd1-4f39-8824-e8b12dcaa214")
+	)
+	(junction
+		(at 87.63 127)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "f81a4d59-d12c-4aad-b2d8-6ca9b9cfe997")
+	)
+	(junction
+		(at 120.65 162.56)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "f91f0eaf-1e53-4bcc-b947-0ce1bef198a0")
 	)
 	(wire
 		(pts
@@ -1998,6 +2698,16 @@
 	)
 	(wire
 		(pts
+			(xy 101.6 127) (xy 101.6 119.38)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "24a1af45-8c05-4bdf-bca9-5fe2a0ffb610")
+	)
+	(wire
+		(pts
 			(xy 64.77 81.28) (xy 68.58 81.28)
 		)
 		(stroke
@@ -2048,6 +2758,16 @@
 	)
 	(wire
 		(pts
+			(xy 120.65 119.38) (xy 138.43 119.38)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "2c17f3c4-9f96-4993-9338-23b754393914")
+	)
+	(wire
+		(pts
 			(xy 41.91 45.72) (xy 44.45 45.72)
 		)
 		(stroke
@@ -2055,6 +2775,16 @@
 			(type default)
 		)
 		(uuid "316d1e4e-bcb7-47ad-b949-0b5b1986f56f")
+	)
+	(wire
+		(pts
+			(xy 67.31 154.94) (xy 67.31 153.67)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "361f54fa-9c7d-4ac8-af3a-af2245387543")
 	)
 	(wire
 		(pts
@@ -2085,6 +2815,16 @@
 			(type default)
 		)
 		(uuid "3e470f33-0af4-4a6e-8d6a-661c4c4de7da")
+	)
+	(wire
+		(pts
+			(xy 62.23 161.29) (xy 67.31 161.29)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "40e93924-6126-4971-af3a-8b97095c0f09")
 	)
 	(wire
 		(pts
@@ -2128,6 +2868,26 @@
 	)
 	(wire
 		(pts
+			(xy 101.6 170.18) (xy 101.6 162.56)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "495ccff1-f026-408c-b3bc-57b63d5db4f8")
+	)
+	(wire
+		(pts
+			(xy 25.4 156.21) (xy 43.18 156.21)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "4c0693af-a074-47e3-b7a7-50e4e7f172f4")
+	)
+	(wire
+		(pts
 			(xy 77.47 40.64) (xy 78.74 40.64)
 		)
 		(stroke
@@ -2145,6 +2905,16 @@
 			(type default)
 		)
 		(uuid "5b8fcfb8-ac9e-4eae-85a2-8390850ef376")
+	)
+	(wire
+		(pts
+			(xy 101.6 119.38) (xy 109.22 119.38)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "623c0a02-dd3d-4c75-b966-cb573647393b")
 	)
 	(wire
 		(pts
@@ -2178,6 +2948,36 @@
 	)
 	(wire
 		(pts
+			(xy 109.22 154.94) (xy 99.06 154.94)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "6a1b1572-90cf-48b1-9e26-6ba7a44a0690")
+	)
+	(wire
+		(pts
+			(xy 87.63 160.02) (xy 87.63 170.18)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "6ac33e6f-40b1-47ee-90ca-d417c27d8f1d")
+	)
+	(wire
+		(pts
+			(xy 62.23 153.67) (xy 67.31 153.67)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "6b13535f-7915-432e-be52-1bcdfde8cbf1")
+	)
+	(wire
+		(pts
 			(xy 133.35 50.8) (xy 134.62 50.8)
 		)
 		(stroke
@@ -2185,6 +2985,16 @@
 			(type default)
 		)
 		(uuid "7452344d-f3b0-4d13-8718-21410724c859")
+	)
+	(wire
+		(pts
+			(xy 120.65 111.76) (xy 138.43 111.76)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "7ca7db7e-457b-4e50-93e7-444646901ebb")
 	)
 	(wire
 		(pts
@@ -2208,6 +3018,16 @@
 	)
 	(wire
 		(pts
+			(xy 25.4 113.03) (xy 43.18 113.03)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "7f04c2b8-76be-412c-b4f8-af9d9d43ad5a")
+	)
+	(wire
+		(pts
 			(xy 82.55 48.26) (xy 87.63 48.26)
 		)
 		(stroke
@@ -2228,6 +3048,16 @@
 	)
 	(wire
 		(pts
+			(xy 120.65 162.56) (xy 138.43 162.56)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "86a6b1d3-3e22-4fc8-8673-62c5df39f338")
+	)
+	(wire
+		(pts
 			(xy 64.77 78.74) (xy 64.77 73.66)
 		)
 		(stroke
@@ -2235,6 +3065,16 @@
 			(type default)
 		)
 		(uuid "88f7e6cf-592b-43f8-86f7-95d90679a2d5")
+	)
+	(wire
+		(pts
+			(xy 87.63 170.18) (xy 101.6 170.18)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "8b3fdf82-00b5-49ff-bf4d-2992ae1e9645")
 	)
 	(wire
 		(pts
@@ -2248,6 +3088,16 @@
 	)
 	(wire
 		(pts
+			(xy 25.4 163.83) (xy 43.18 163.83)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "9167e08a-c011-492b-89db-03c8c8563bab")
+	)
+	(wire
+		(pts
 			(xy 44.45 78.74) (xy 44.45 83.82)
 		)
 		(stroke
@@ -2255,6 +3105,26 @@
 			(type default)
 		)
 		(uuid "924b322e-5ea7-4705-9385-82ff10b03501")
+	)
+	(wire
+		(pts
+			(xy 87.63 111.76) (xy 91.44 111.76)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "93166543-d74f-4fb3-a323-76e36a3e84b3")
+	)
+	(wire
+		(pts
+			(xy 87.63 127) (xy 101.6 127)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "97254db2-1272-4eb1-8dff-cbea3da909f1")
 	)
 	(wire
 		(pts
@@ -2278,6 +3148,26 @@
 	)
 	(wire
 		(pts
+			(xy 87.63 116.84) (xy 87.63 127)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "98cb371e-76cc-4261-ae99-38f802b2985a")
+	)
+	(wire
+		(pts
+			(xy 120.65 154.94) (xy 138.43 154.94)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "9ca0eea3-d504-478c-a1ef-bf836ed1a1af")
+	)
+	(wire
+		(pts
 			(xy 153.67 67.31) (xy 160.02 67.31)
 		)
 		(stroke
@@ -2298,6 +3188,26 @@
 	)
 	(wire
 		(pts
+			(xy 67.31 111.76) (xy 67.31 110.49)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "b1a5de32-3502-405f-b719-ad9eb5a8e13b")
+	)
+	(wire
+		(pts
+			(xy 109.22 154.94) (xy 120.65 154.94)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "b227ad59-c169-4515-a880-1856657c8d34")
+	)
+	(wire
+		(pts
 			(xy 149.86 73.66) (xy 149.86 74.93)
 		)
 		(stroke
@@ -2308,6 +3218,16 @@
 	)
 	(wire
 		(pts
+			(xy 87.63 154.94) (xy 91.44 154.94)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "b9567bf2-e3d8-4eca-b9b4-858a2067b17d")
+	)
+	(wire
+		(pts
 			(xy 78.74 40.64) (xy 82.55 40.64)
 		)
 		(stroke
@@ -2315,6 +3235,16 @@
 			(type default)
 		)
 		(uuid "bdf992f3-b099-4347-bff0-58c41228c313")
+	)
+	(wire
+		(pts
+			(xy 62.23 118.11) (xy 67.31 118.11)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "c10b9be2-ef6e-4b61-b5bc-85f1c42c5015")
 	)
 	(wire
 		(pts
@@ -2348,6 +3278,26 @@
 	)
 	(wire
 		(pts
+			(xy 109.22 111.76) (xy 120.65 111.76)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "cf69264f-2360-4269-8639-7c3fc7ac5593")
+	)
+	(wire
+		(pts
+			(xy 109.22 111.76) (xy 99.06 111.76)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "d0d10a14-aa24-407e-8136-b90048c8e628")
+	)
+	(wire
+		(pts
 			(xy 78.74 73.66) (xy 82.55 73.66)
 		)
 		(stroke
@@ -2378,6 +3328,26 @@
 	)
 	(wire
 		(pts
+			(xy 67.31 116.84) (xy 67.31 118.11)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "dfafa363-d60e-4e32-864f-ea413001b18c")
+	)
+	(wire
+		(pts
+			(xy 67.31 160.02) (xy 67.31 161.29)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "e1ca213a-f2ba-4ceb-96cc-77c61dbe9bb4")
+	)
+	(wire
+		(pts
 			(xy 82.55 73.66) (xy 87.63 73.66)
 		)
 		(stroke
@@ -2398,6 +3368,26 @@
 	)
 	(wire
 		(pts
+			(xy 101.6 162.56) (xy 109.22 162.56)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "ef363a89-e4c8-4d7b-a8b9-e5a178e04028")
+	)
+	(wire
+		(pts
+			(xy 25.4 120.65) (xy 43.18 120.65)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "ef38d26e-2ad8-45f3-b16e-513b41c0e979")
+	)
+	(wire
+		(pts
 			(xy 38.1 45.72) (xy 41.91 45.72)
 		)
 		(stroke
@@ -2415,6 +3405,97 @@
 			(type default)
 		)
 		(uuid "f9aeff88-d35b-4d37-8ae7-6076a498b478")
+	)
+	(wire
+		(pts
+			(xy 62.23 110.49) (xy 67.31 110.49)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "fd740aaa-5fcf-4935-96d8-263f616138ef")
+	)
+	(symbol
+		(lib_id "Device:C")
+		(at 62.23 157.48 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "03a31759-8a54-451f-88e9-6cad700d0755")
+		(property "Reference" "C188"
+			(at 62.738 155.194 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "1uF"
+			(at 62.738 159.766 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
+			(at 63.1952 161.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 62.23 157.48 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Unpolarized capacitor"
+			(at 62.23 157.48 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "2"
+			(uuid "413c3957-38c4-45ec-b55f-9f2f9222e43f")
+		)
+		(pin "1"
+			(uuid "f1e8d37e-3dfa-4721-8937-50f9b3b99cfe")
+		)
+		(instances
+			(project "pcie"
+				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
+					(reference "C188")
+					(unit 1)
+				)
+			)
+		)
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -2595,7 +3676,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "100n"
+		(property "Value" "100nF"
 			(at 72.39 45.7199 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -2655,6 +3736,426 @@
 		)
 	)
 	(symbol
+		(lib_id "Device:C_Polarized_US")
+		(at 138.43 158.75 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "09cecd77-06b5-47c7-b9df-574e6d2a0cdd")
+		(property "Reference" "C191"
+			(at 142.24 156.8449 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "470uF@16V"
+			(at 142.24 159.3849 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Capacitor_SMD:CP_Elec_8x10.5"
+			(at 138.43 158.75 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 138.43 158.75 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "CAP ALUM 470uF ±20% 16V SMD"
+			(at 138.43 158.75 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C2918361"
+			(at 138.43 158.75 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "09d477d4-1643-492e-9339-005b84a2f804")
+		)
+		(pin "2"
+			(uuid "ab15078d-136a-4b49-b9f6-75dd7eeee97d")
+		)
+		(instances
+			(project "pcie"
+				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
+					(reference "C191")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:C_Polarized_US")
+		(at 138.43 115.57 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "0dee41c9-a604-41ee-98d2-79f348011caa")
+		(property "Reference" "C183"
+			(at 142.24 113.6649 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "470uF@16V"
+			(at 142.24 116.2049 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Capacitor_SMD:CP_Elec_8x10.5"
+			(at 138.43 115.57 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 138.43 115.57 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "CAP ALUM 470uF ±20% 16V SMD"
+			(at 138.43 115.57 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C2918361"
+			(at 138.43 115.57 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "054b6e23-3314-44fe-9bca-3ee005e7c3a4")
+		)
+		(pin "2"
+			(uuid "3d08a6e2-5eec-4b1b-860d-54f0cd516645")
+		)
+		(instances
+			(project "pcie"
+				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
+					(reference "C183")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 91.44 119.38 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "1366ca7c-c2ba-47cf-894a-5296cc5e11aa")
+		(property "Reference" "#PWR0110"
+			(at 91.44 125.73 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 91.44 124.46 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 91.44 119.38 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 91.44 119.38 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 91.44 119.38 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "b6cf1cd5-506f-47bc-87ff-d8130e8f1c3d")
+		)
+		(instances
+			(project "pcie"
+				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
+					(reference "#PWR0110")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 25.4 163.83 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "17183935-2e9d-4e84-abe5-e9a8108fda56")
+		(property "Reference" "#PWR0116"
+			(at 25.4 170.18 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 25.4 168.91 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 25.4 163.83 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 25.4 163.83 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 25.4 163.83 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "ca963534-54b3-4dae-a90b-d0583c239a33")
+		)
+		(instances
+			(project "pcie"
+				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
+					(reference "#PWR0116")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 25.4 120.65 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "1b06e8e5-c67b-4082-9145-138ab96fcc9c")
+		(property "Reference" "#PWR0114"
+			(at 25.4 127 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 25.4 125.73 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 25.4 120.65 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 25.4 120.65 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 25.4 120.65 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "907a40fa-aa8a-4a2a-b16b-7f7dd2a1f4b4")
+		)
+		(instances
+			(project "pcie"
+				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
+					(reference "#PWR0114")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Device:C")
 		(at 87.63 77.47 0)
 		(unit 1)
@@ -2676,7 +4177,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "22u"
+		(property "Value" "22uF"
 			(at 88.138 79.756 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -2757,7 +4258,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "10u"
+		(property "Value" "10uF"
 			(at 131.826 50.292 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -2811,6 +4312,162 @@
 			(project "pcie"
 				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
 					(reference "C50")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+12V")
+		(at 62.23 110.49 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "21315a04-cb80-433d-a4b6-35c7852ca9a3")
+		(property "Reference" "#PWR086"
+			(at 62.23 114.3 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "+12VE"
+			(at 62.23 105.41 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 62.23 110.49 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 62.23 110.49 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"+12V\""
+			(at 62.23 110.49 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "14e027cc-a969-4fc1-a387-7380754fed90")
+		)
+		(instances
+			(project "pcie"
+				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
+					(reference "#PWR086")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+5V")
+		(at 138.43 111.76 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "2216f53c-e44f-4f02-af3c-17c1d2d6d00d")
+		(property "Reference" "#PWR0123"
+			(at 138.43 115.57 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "LED_5V2"
+			(at 138.43 106.68 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 138.43 111.76 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 138.43 111.76 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"+5V\""
+			(at 138.43 111.76 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "9dc27077-7328-40e5-8494-567d81b4be1a")
+		)
+		(instances
+			(project "pcie"
+				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
+					(reference "#PWR0123")
 					(unit 1)
 				)
 			)
@@ -2896,6 +4553,84 @@
 		)
 	)
 	(symbol
+		(lib_id "power:GND")
+		(at 91.44 162.56 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "2fdcbc1b-7be5-4596-ba96-478ac0c5ba3b")
+		(property "Reference" "#PWR0120"
+			(at 91.44 168.91 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 91.44 167.64 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 91.44 162.56 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 91.44 162.56 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 91.44 162.56 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "c05cf0d8-340a-4a6a-999d-815b8197b050")
+		)
+		(instances
+			(project "pcie"
+				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
+					(reference "#PWR0120")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Device:C")
 		(at 82.55 77.47 0)
 		(unit 1)
@@ -2917,7 +4652,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "22u"
+		(property "Value" "22uF"
 			(at 83.058 79.756 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3055,6 +4790,106 @@
 		)
 	)
 	(symbol
+		(lib_id "Regulator_Switching:XL4015")
+		(at 77.47 157.48 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "391fc702-233e-4287-b169-1deebf2dd2f9")
+		(property "Reference" "U10"
+			(at 77.47 147.32 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "XL4015"
+			(at 77.47 149.86 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Package_TO_SOT_SMD:TO-263-5_TabPin3"
+			(at 99.06 165.1 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" "http://www.xlsemi.net/datasheet/XL4015%20datasheet-English.pdf"
+			(at 77.47 157.48 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "5A 180kHz 36V Buck DC to DC Converter"
+			(at 77.47 157.48 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C51661"
+			(at 77.47 157.48 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "5"
+			(uuid "3f509ee6-2b9e-4fcb-8315-562ba9e674ae")
+		)
+		(pin "2"
+			(uuid "3e029265-3fb9-45d0-ac9e-0513b8e609fc")
+		)
+		(pin "4"
+			(uuid "46be6ab3-cc18-40ef-9b82-75bd992ff932")
+		)
+		(pin "1"
+			(uuid "cee6be7c-0f23-4452-931d-388991ca9f8a")
+		)
+		(pin "3"
+			(uuid "602871b0-e9a6-42fc-be42-72f1b88bb317")
+		)
+		(instances
+			(project "pcie"
+				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
+					(reference "U10")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Regulator_Switching:AP63203WU")
 		(at 54.61 81.28 0)
 		(unit 1)
@@ -3159,6 +4994,87 @@
 	)
 	(symbol
 		(lib_id "Device:C")
+		(at 62.23 114.3 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "3cb39701-3ecd-443b-b5d6-0c08956135c9")
+		(property "Reference" "C65"
+			(at 62.738 112.014 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "1uF"
+			(at 62.738 116.586 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
+			(at 63.1952 118.11 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 62.23 114.3 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Unpolarized capacitor"
+			(at 62.23 114.3 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "2"
+			(uuid "71428ed6-3072-45a0-b936-b7c830000da8")
+		)
+		(pin "1"
+			(uuid "4f0fba33-dd51-4a24-b0b5-d0f78953aade")
+		)
+		(instances
+			(project "pcie"
+				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
+					(reference "C65")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:C")
 		(at 160.02 71.12 0)
 		(unit 1)
 		(body_style 1)
@@ -3179,7 +5095,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "10u"
+		(property "Value" "10uF"
 			(at 160.528 73.406 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3233,6 +5149,85 @@
 			(project "pcie"
 				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
 					(reference "C52")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+5V")
+		(at 138.43 154.94 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "3dcefa4b-2d97-4e50-b159-9046a400b57a")
+		(property "Reference" "#PWR0124"
+			(at 138.43 158.75 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "LED_5V1"
+			(at 140.97 153.6699 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 138.43 154.94 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 138.43 154.94 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"+5V\""
+			(at 138.43 154.94 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "4ab721b2-4182-4cd1-a59f-c4511757d789")
+		)
+		(instances
+			(project "pcie"
+				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
+					(reference "#PWR0124")
 					(unit 1)
 				)
 			)
@@ -3332,6 +5327,357 @@
 		)
 	)
 	(symbol
+		(lib_id "Regulator_Switching:XL4015")
+		(at 77.47 114.3 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "4145de2a-b52d-4d54-b9c7-8361515ebf2a")
+		(property "Reference" "U9"
+			(at 77.47 104.14 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "XL4015"
+			(at 77.47 106.68 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Package_TO_SOT_SMD:TO-263-5_TabPin3"
+			(at 99.06 121.92 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" "http://www.xlsemi.net/datasheet/XL4015%20datasheet-English.pdf"
+			(at 77.47 114.3 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "5A 180kHz 36V Buck DC to DC Converter"
+			(at 77.47 114.3 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C51661"
+			(at 77.47 114.3 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "5"
+			(uuid "e919afb6-6b9a-4208-a14e-c0f5e1713779")
+		)
+		(pin "2"
+			(uuid "172cd3fb-5c7b-48d4-8941-20b68eca66e7")
+		)
+		(pin "4"
+			(uuid "9ba2c113-ce0d-4717-8636-6a35b7853013")
+		)
+		(pin "1"
+			(uuid "299ca4ca-3201-4a10-8dd0-fdf772b2d6ec")
+		)
+		(pin "3"
+			(uuid "3f6215f5-ce86-48df-9134-ad361e573673")
+		)
+		(instances
+			(project "pcie"
+				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
+					(reference "U9")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 109.22 166.37 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "4e91379a-50da-4b08-bf24-b4cfd2dee84e")
+		(property "Reference" "R56"
+			(at 111.76 165.0999 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "1k"
+			(at 111.76 167.6399 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 107.442 166.37 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 109.22 166.37 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Resistor"
+			(at 109.22 166.37 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "2"
+			(uuid "e5e5989c-bcf6-4d4c-96b4-35f25866ea93")
+		)
+		(pin "1"
+			(uuid "a51ff2d9-be2e-4db7-89f5-4dcc8adfd2ad")
+		)
+		(instances
+			(project "pcie"
+				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
+					(reference "R56")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:L")
+		(at 95.25 111.76 90)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "5015fe4b-a369-438c-9467-41953858f545")
+		(property "Reference" "L5"
+			(at 95.25 106.68 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "33uH"
+			(at 95.25 109.22 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Inductor_SMD:L_APV_APH1050"
+			(at 95.25 111.76 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 95.25 111.76 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Inductor"
+			(at 95.25 111.76 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C22463845"
+			(at 95.25 111.76 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "d19c1618-5302-41c4-9aee-5d88b402dd71")
+		)
+		(pin "2"
+			(uuid "c581427f-5282-4581-83d5-414aa5a6af56")
+		)
+		(instances
+			(project "pcie"
+				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
+					(reference "L5")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+12V")
+		(at 62.23 153.67 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "523ebd04-0616-4161-b721-0ce34c3b7599")
+		(property "Reference" "#PWR0117"
+			(at 62.23 157.48 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "+12VE"
+			(at 62.23 148.59 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 62.23 153.67 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 62.23 153.67 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"+12V\""
+			(at 62.23 153.67 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "333f99a7-3d2e-4d88-8120-d2856ae5ed1e")
+		)
+		(instances
+			(project "pcie"
+				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
+					(reference "#PWR0117")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "power:+12V")
 		(at 41.91 45.72 0)
 		(unit 1)
@@ -3404,6 +5750,84 @@
 			(project "pcie"
 				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
 					(reference "#PWR05")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 120.65 162.56 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "591f59f0-6a00-4b98-a05b-4ccc3c6affb1")
+		(property "Reference" "#PWR0122"
+			(at 120.65 168.91 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 120.65 167.64 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 120.65 162.56 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 120.65 162.56 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 120.65 162.56 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "1998e726-05b8-4ae5-93f6-3d22406cacc8")
+		)
+		(instances
+			(project "pcie"
+				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
+					(reference "#PWR0122")
 					(unit 1)
 				)
 			)
@@ -3509,7 +5933,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "22u"
+		(property "Value" "22uF"
 			(at 88.138 46.736 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3647,6 +6071,180 @@
 		)
 	)
 	(symbol
+		(lib_id "Device:C")
+		(at 87.63 130.81 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "711f8a97-4758-4d22-97ec-e8752974fd74")
+		(property "Reference" "C185"
+			(at 88.138 128.524 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "33nF"
+			(at 88.138 133.096 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Capacitor_SMD:C_0402_1005Metric"
+			(at 88.5952 134.62 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 87.63 130.81 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Unpolarized capacitor"
+			(at 87.63 130.81 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "2"
+			(uuid "75bd4f27-808f-42fc-9bdf-184d230bb7e0")
+		)
+		(pin "1"
+			(uuid "7ff72c79-a836-48ce-ad0c-6f213c61b40c")
+		)
+		(instances
+			(project "pcie"
+				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
+					(reference "C185")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:C_Polarized_US")
+		(at 25.4 116.84 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "716dbaab-9c60-406b-b23a-f904d07a7744")
+		(property "Reference" "C182"
+			(at 29.21 114.9349 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "220uF@25V"
+			(at 29.21 117.4749 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Capacitor_SMD:CP_Elec_6.3x7.7"
+			(at 25.4 116.84 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 25.4 116.84 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "CAP ALUM 220uF ±20% 25V SMD"
+			(at 25.4 116.84 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C2918361"
+			(at 25.4 116.84 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "58b27597-b3e9-4b68-a5ae-5b7d4710abc3")
+		)
+		(pin "2"
+			(uuid "ea80ecd3-a761-4eb7-9cc5-ad455963bfef")
+		)
+		(instances
+			(project "pcie"
+				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
+					(reference "C182")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "power:+3V3")
 		(at 78.74 72.39 0)
 		(unit 1)
@@ -3719,6 +6317,177 @@
 			(project "pcie"
 				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
 					(reference "#PWR062")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 109.22 127 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "71c8fbfe-2e75-4029-98f1-e76c93260d89")
+		(property "Reference" "#PWR0109"
+			(at 109.22 133.35 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 109.22 132.08 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 109.22 127 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 109.22 127 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 109.22 127 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "c02f2ca0-84a5-43ab-8721-72f98e7befe8")
+		)
+		(instances
+			(project "pcie"
+				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
+					(reference "#PWR0109")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:C_Polarized_US")
+		(at 25.4 160.02 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "76978762-702a-4426-b17d-c8e4af5bf2ee")
+		(property "Reference" "C186"
+			(at 29.21 158.1149 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "220uF@25V"
+			(at 29.21 160.6549 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Capacitor_SMD:CP_Elec_6.3x7.7"
+			(at 25.4 160.02 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 25.4 160.02 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "CAP ALUM 220uF ±20% 25V SMD"
+			(at 25.4 160.02 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C2918361"
+			(at 25.4 160.02 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "9e157917-b253-476f-8c97-6346afa10fdb")
+		)
+		(pin "2"
+			(uuid "b92ee45f-d504-4e31-a87f-1974ffb0b3c2")
+		)
+		(instances
+			(project "pcie"
+				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
+					(reference "C186")
 					(unit 1)
 				)
 			)
@@ -3906,6 +6675,84 @@
 		)
 	)
 	(symbol
+		(lib_id "power:GND")
+		(at 87.63 177.8 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "7d2d13cf-b94b-4f8c-88bf-9d7d7a5d462d")
+		(property "Reference" "#PWR0119"
+			(at 87.63 184.15 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 87.63 182.88 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 87.63 177.8 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 87.63 177.8 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 87.63 177.8 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "061d360b-9caf-40b7-b68e-297e75395f89")
+		)
+		(instances
+			(project "pcie"
+				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
+					(reference "#PWR0119")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Regulator_Linear:TLV75801PDBV")
 		(at 142.24 71.12 0)
 		(unit 1)
@@ -4085,6 +6932,180 @@
 		)
 	)
 	(symbol
+		(lib_id "Device:C")
+		(at 120.65 158.75 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "87b039cf-8e18-40a0-8de0-a94d0b03e45e")
+		(property "Reference" "C190"
+			(at 124.46 157.4799 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "22uF@10V"
+			(at 124.46 160.0199 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Capacitor_SMD:C_1206_3216Metric"
+			(at 121.6152 162.56 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 120.65 158.75 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "CAP CER 22uF 10V X7R 1206"
+			(at 120.65 158.75 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C91604"
+			(at 120.65 158.75 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "c53c5828-1b96-48f8-8599-20535060d953")
+		)
+		(pin "2"
+			(uuid "eb4883c0-3efe-4f44-b1a7-3f6575718553")
+		)
+		(instances
+			(project "pcie"
+				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
+					(reference "C190")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:C")
+		(at 87.63 173.99 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "8ce42f97-56dc-4022-bfd5-392ee19a99a4")
+		(property "Reference" "C189"
+			(at 88.138 171.704 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "33nF"
+			(at 88.138 176.276 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Capacitor_SMD:C_0402_1005Metric"
+			(at 88.5952 177.8 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 87.63 173.99 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Unpolarized capacitor"
+			(at 87.63 173.99 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "2"
+			(uuid "60bc6777-fbca-4a37-b13d-b8463eab6b9b")
+		)
+		(pin "1"
+			(uuid "6d29c2fb-5465-4c38-9871-9361609e7e20")
+		)
+		(instances
+			(project "pcie"
+				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
+					(reference "C189")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "power:+1V0")
 		(at 153.67 66.04 0)
 		(unit 1)
@@ -4184,7 +7205,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "22u"
+		(property "Value" "22uF"
 			(at 165.608 73.406 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4322,6 +7343,99 @@
 		)
 	)
 	(symbol
+		(lib_id "Device:D")
+		(at 91.44 115.57 270)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "a677f968-f829-4b76-938f-5a171da554f3")
+		(property "Reference" "D199"
+			(at 93.98 114.2999 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "SS1045-SMB"
+			(at 93.98 116.8399 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Diode_SMD:D_SMB"
+			(at 91.44 115.57 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 91.44 115.57 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "DIODE SCHOTTKY 45V SMB(DO-214AA)"
+			(at 91.44 115.57 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C2903947"
+			(at 91.44 115.57 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "2"
+			(uuid "af3ae335-9fa9-4cbc-9229-7e3a1ad0c1c2")
+		)
+		(pin "1"
+			(uuid "c522c4ba-a6ba-4298-8665-15c2cd1656ce")
+		)
+		(instances
+			(project "pcie"
+				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
+					(reference "D199")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Device:C")
 		(at 33.02 82.55 0)
 		(unit 1)
@@ -4343,7 +7457,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "10u"
+		(property "Value" "10uF"
 			(at 33.528 84.836 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4403,6 +7517,177 @@
 		)
 	)
 	(symbol
+		(lib_id "power:GND")
+		(at 120.65 119.38 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "ab4ef946-811a-41d5-a872-b77dae6feef3")
+		(property "Reference" "#PWR0111"
+			(at 120.65 125.73 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 120.65 124.46 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 120.65 119.38 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 120.65 119.38 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 120.65 119.38 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "b3d02122-7363-438e-9db9-8b65bd984fc0")
+		)
+		(instances
+			(project "pcie"
+				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
+					(reference "#PWR0111")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:C")
+		(at 43.18 116.84 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "b48dfcd8-fb9a-47fe-a59a-ffd17b3f17c0")
+		(property "Reference" "C181"
+			(at 46.99 115.5699 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "22uF@25V"
+			(at 46.99 118.1099 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Capacitor_SMD:C_1210_3225Metric"
+			(at 44.1452 120.65 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 43.18 116.84 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "CAP CER 22uF 25V X7R 1210"
+			(at 43.18 116.84 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C337451"
+			(at 43.18 116.84 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "66657d92-f95e-4b3a-a3c3-85349307277b")
+		)
+		(pin "2"
+			(uuid "54fbbc7f-76c4-4f4e-ac59-d99144bc1a1b")
+		)
+		(instances
+			(project "pcie"
+				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
+					(reference "C181")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Device:C")
 		(at 38.1 82.55 0)
 		(unit 1)
@@ -4424,7 +7709,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "22u"
+		(property "Value" "22uF"
 			(at 38.608 84.836 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4505,7 +7790,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "22u"
+		(property "Value" "22uF"
 			(at 38.608 51.816 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4586,7 +7871,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "10u"
+		(property "Value" "10uF"
 			(at 131.826 60.452 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4640,6 +7925,337 @@
 			(project "pcie"
 				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
 					(reference "C51")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 109.22 115.57 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "c02faa47-772a-4727-8011-65342007ae6e")
+		(property "Reference" "R53"
+			(at 111.76 114.2999 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "3k"
+			(at 111.76 116.8399 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 107.442 115.57 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 109.22 115.57 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Resistor"
+			(at 109.22 115.57 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "2"
+			(uuid "61e3596a-8726-456b-ae5b-ea0fa717ecba")
+		)
+		(pin "1"
+			(uuid "49e8ea16-4412-4b77-abb0-02b136947a37")
+		)
+		(instances
+			(project "pcie"
+				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
+					(reference "R53")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:C")
+		(at 120.65 115.57 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "c073088e-f4c3-4ab2-9902-fc12e4200425")
+		(property "Reference" "C184"
+			(at 124.46 114.2999 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "22uF@10V"
+			(at 124.46 116.8399 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Capacitor_SMD:C_1206_3216Metric"
+			(at 121.6152 119.38 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 120.65 115.57 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "CAP CER 22uF 10V X7R 1206"
+			(at 120.65 115.57 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C91604"
+			(at 120.65 115.57 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "894cf212-bd9f-4a12-9c90-f67f28e698a1")
+		)
+		(pin "2"
+			(uuid "2fd64a17-3661-459d-b004-68e89af3d7c3")
+		)
+		(instances
+			(project "pcie"
+				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
+					(reference "C184")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 109.22 170.18 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "c733c9d4-a30a-4794-a5bd-70677dde1566")
+		(property "Reference" "#PWR0121"
+			(at 109.22 176.53 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 109.22 175.26 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 109.22 170.18 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 109.22 170.18 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 109.22 170.18 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "ceca4c0e-5864-4241-bb0f-b3d184e0cfc9")
+		)
+		(instances
+			(project "pcie"
+				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
+					(reference "#PWR0121")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 77.47 165.1 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "c8516a8b-e1a8-41a7-8d06-6fe5b1edc0f9")
+		(property "Reference" "#PWR0118"
+			(at 77.47 171.45 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 77.47 170.18 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 77.47 165.1 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 77.47 165.1 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 77.47 165.1 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "95413f38-2dcf-452c-bad8-97c47962b7df")
+		)
+		(instances
+			(project "pcie"
+				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
+					(reference "#PWR0118")
 					(unit 1)
 				)
 			)
@@ -4914,7 +8530,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "10u"
+		(property "Value" "10uF"
 			(at 33.528 51.816 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4968,6 +8584,97 @@
 			(project "pcie"
 				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
 					(reference "C42")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:L")
+		(at 95.25 154.94 90)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "d8238667-d86f-4334-9ad3-1bb0b46dec1d")
+		(property "Reference" "L6"
+			(at 95.25 149.86 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "33uH"
+			(at 95.25 152.4 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Inductor_SMD:L_APV_APH1050"
+			(at 95.25 154.94 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 95.25 154.94 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Inductor"
+			(at 95.25 154.94 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C22463845"
+			(at 95.25 154.94 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "81a9c5ed-bdb4-4300-a60d-25ce3bf3996a")
+		)
+		(pin "2"
+			(uuid "97f02ed0-252b-4c9c-a936-4fc5bb716503")
+		)
+		(instances
+			(project "pcie"
+				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
+					(reference "L6")
 					(unit 1)
 				)
 			)
@@ -5053,6 +8760,99 @@
 		)
 	)
 	(symbol
+		(lib_id "Device:D")
+		(at 91.44 158.75 270)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "e5d65df3-5201-498a-b321-7f1c4f676828")
+		(property "Reference" "D200"
+			(at 93.98 157.4799 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "SS1045-SMB"
+			(at 93.98 160.0199 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Diode_SMD:D_SMB"
+			(at 91.44 158.75 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 91.44 158.75 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "DIODE SCHOTTKY 45V SMB(DO-214AA)"
+			(at 91.44 158.75 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C2903947"
+			(at 91.44 158.75 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "2"
+			(uuid "143460ce-4478-4f23-8f54-be3a0af05765")
+		)
+		(pin "1"
+			(uuid "7a012ae5-b4e7-4a18-8948-74e901ad5515")
+		)
+		(instances
+			(project "pcie"
+				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
+					(reference "D200")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Device:C")
 		(at 68.58 77.47 0)
 		(unit 1)
@@ -5075,7 +8875,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "100n"
+		(property "Value" "100nF"
 			(at 72.39 78.7399 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -5207,6 +9007,575 @@
 			(project "pcie"
 				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
 					(reference "#PWR054")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 77.47 121.92 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "e8e26479-394a-48d1-8ca5-5f124829e0d5")
+		(property "Reference" "#PWR085"
+			(at 77.47 128.27 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 77.47 127 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 77.47 121.92 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 77.47 121.92 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 77.47 121.92 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "e5437833-49f4-4891-a782-d7375934d946")
+		)
+		(instances
+			(project "pcie"
+				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
+					(reference "#PWR085")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 87.63 134.62 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "e9577d3d-e086-4162-a984-db0480c0a876")
+		(property "Reference" "#PWR0113"
+			(at 87.63 140.97 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 87.63 139.7 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 87.63 134.62 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 87.63 134.62 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 87.63 134.62 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "fd45f280-6ed4-4bab-b647-4d5c7cd0e94e")
+		)
+		(instances
+			(project "pcie"
+				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
+					(reference "#PWR0113")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 109.22 158.75 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "ea0495a2-c879-40d7-9051-a7b634509789")
+		(property "Reference" "R55"
+			(at 111.76 157.4799 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "3k"
+			(at 111.76 160.0199 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 107.442 158.75 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 109.22 158.75 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Resistor"
+			(at 109.22 158.75 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "2"
+			(uuid "c0a2828b-31ab-4772-92a7-8faa5adad71c")
+		)
+		(pin "1"
+			(uuid "5a27c9e0-4b08-4e6e-999f-20df854e7593")
+		)
+		(instances
+			(project "pcie"
+				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
+					(reference "R55")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+12V")
+		(at 25.4 156.21 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "eae05cea-b42d-41ad-9cf3-434e5f63a443")
+		(property "Reference" "#PWR0115"
+			(at 25.4 160.02 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "+12VE"
+			(at 25.4 151.13 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 25.4 156.21 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 25.4 156.21 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"+12V\""
+			(at 25.4 156.21 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "0d98e583-7572-4e2c-9be3-2b99543e3ee8")
+		)
+		(instances
+			(project "pcie"
+				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
+					(reference "#PWR0115")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:C")
+		(at 43.18 160.02 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "ed279928-5da7-4724-b4d7-c8f8bc505144")
+		(property "Reference" "C187"
+			(at 46.99 158.7499 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "22uF@25V"
+			(at 46.99 161.2899 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Capacitor_SMD:C_1210_3225Metric"
+			(at 44.1452 163.83 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 43.18 160.02 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "CAP CER 22uF 25V X7R 1210"
+			(at 43.18 160.02 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C337451"
+			(at 43.18 160.02 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "35de3863-c6cf-4656-804d-5961d3b3a0ac")
+		)
+		(pin "2"
+			(uuid "e83ece75-8b3d-459f-b829-a4920eb828a0")
+		)
+		(instances
+			(project "pcie"
+				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
+					(reference "C187")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+12V")
+		(at 25.4 113.03 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "ef7d3154-f5ac-4588-9d8c-6c15fdb70762")
+		(property "Reference" "#PWR0112"
+			(at 25.4 116.84 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "+12VE"
+			(at 25.4 107.95 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 25.4 113.03 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 25.4 113.03 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"+12V\""
+			(at 25.4 113.03 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "21000e0c-6fcc-4a7d-b5db-f0375a5be869")
+		)
+		(instances
+			(project "pcie"
+				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
+					(reference "#PWR0112")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 109.22 123.19 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "f2e3d429-5982-4488-8b60-6fa9505922b2")
+		(property "Reference" "R54"
+			(at 111.76 121.9199 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "1k"
+			(at 111.76 124.4599 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 107.442 123.19 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 109.22 123.19 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Resistor"
+			(at 109.22 123.19 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "2"
+			(uuid "9ba9447c-dc68-48d9-b4b3-2d0480910cda")
+		)
+		(pin "1"
+			(uuid "5ea0e1db-4bf3-4bf8-9aa7-500af4102bc5")
+		)
+		(instances
+			(project "pcie"
+				(path "/148df24a-5859-4411-9e44-87ad79f56f11/07cdbaaa-7092-40e3-bb57-fdc0bfcb3ad3"
+					(reference "R54")
 					(unit 1)
 				)
 			)
@@ -5403,7 +9772,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "22u"
+		(property "Value" "22uF"
 			(at 83.058 46.736 0)
 			(show_name no)
 			(do_not_autoplace no)

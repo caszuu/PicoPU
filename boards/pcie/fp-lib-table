@@ -1,3 +1,5 @@
 (fp_lib_table
-  (lib (name "PCIexpress")(type "KiCad")(uri "${KIPRJMOD}/../Library/PCIexpress.pretty")(options "")(descr ""))
+	(version 7)
+	(lib (name "PCIexpress") (type "KiCad") (uri "${KIPRJMOD}/../Library/PCIexpress.pretty") (options "") (descr ""))
+	(lib (name "pcie") (type "KiCad") (uri "${KIPRJMOD}/pcie.pretty") (options "") (descr ""))
 )
